@@ -1,0 +1,52 @@
+# Ignore config files
+*.ini
+
+# Ignore build files
+/Binaries/
+/DerivedDataCache/
+/Intermediate/
+/Saved/
+
+# Ignore Unreal project files that shouldn't be tracked
+*.log
+*.suo
+*.user
+*.userprefs
+*.db
+*.sdf
+*.opensdf
+*.vsp
+*.vssscc
+
+# Ignore Unreal asset files that are automatically generated
+*.autosave
+*.swp
+
+# Ignore .vscode folder (VS Code specific settings)
+.vscode/
+
+# Ignore backup files (including those created by Unreal Engine itself)
+*.bak
+
+# Ignore files that Unreal generates based on your project's settings
+*.plist
+*.xcodeproj
+*.xcworkspace
+
+# Ignore LFS file tracking if you're using Git LFS
+*.uasset
+*.umap
+*.fbx
+*.tga
+*.png
+*.jpg
+*.wav
+*.mp3
+
+# Ignore cache or temporary files
+.DS_Store
+Thumbs.db
+
+# Ignore build artifacts (if using a custom build system or building for a specific platform)
+*.xcodeproj
+*.xcworkspace
