@@ -2,10 +2,14 @@
 *.ini
 
 # Ignore build files
+/Backup/
 /Binaries/
 /DerivedDataCache/
 /Intermediate/
 /Saved/
+
+# Ignore private documentation
+/docs/
 
 # Ignore Unreal project files that shouldn't be tracked
 *.log
@@ -24,6 +28,7 @@
 
 # Ignore .vscode folder (VS Code specific settings)
 .vscode/
+.vs/
 
 # Ignore backup files (including those created by Unreal Engine itself)
 *.bak
