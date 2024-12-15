@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "ProceduralMeshComponent.h"
 #include "ProceduralStem.generated.h"
 
 UCLASS()
@@ -22,5 +23,23 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	// Procedural mesh component for the stem
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mesh")
+	UProceduralMeshComponent* StemMesh;
+
+	// Params for stem generation
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem")
+	int32 NumSegments = 10;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem")
+	float SegmentLength = 100.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem")
+	float SegmentRadius = 10.f;
+
+	// Generate the stem geometry
+	void GenerateStem();
+	void GenerateCylinder(FVector Start, FVector End, float Radus, TArray<FVector>& Vertices, TArray<int32>& Triangles);
 
 };
