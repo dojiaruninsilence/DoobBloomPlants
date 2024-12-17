@@ -36,10 +36,26 @@ public:
 	float SegmentLength = 100.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem")
-	float SegmentRadius = 10.f;
+	float SegmentRadius = 10.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem")
+	float BaseRadius = 20.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem")
+	float TopRadius = 5.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem")
+	int32 StemNumSides = 12; // Default to 12
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem")
+	float SegmentGapLength = 20.0f;
 
 	// Generate the stem geometry
 	void GenerateStem();
-	void GenerateCylinder(FVector Start, FVector End, float Radus, TArray<FVector>& Vertices, TArray<int32>& Triangles);
+	void GenerateCylinder(FVector Start, FVector End, float Radius, int32 NumSides, TArray<FVector>& Vertices, TArray<int32>& Triangles);
 
+protected:
+	void GenerateRing(FVector Center, FVector Direction, FVector UpVector, float Radius, TArray<FVector>& RingVertices);
+	void ConnectRings(const TArray<FVector>& RingA, const TArray<FVector>& RingB, TArray<FVector>& Vertices, TArray<int32>& Triangles, int32& BaseIndex);
+	void CreateTransitionGeometry(const TArray<FVector>& LastRingVertices, const TArray<FVector>& NextRingVertices, TArray<FVector>& Vertices, TArray<int32>& Triangles);
 };
