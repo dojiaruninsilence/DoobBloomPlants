@@ -29,6 +29,7 @@ public:
 	UProceduralMeshComponent* StemMesh;
 
 	// Params for stem generation
+	// length params
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem")
 	int32 NumSegments = 10;
 
@@ -36,7 +37,11 @@ public:
 	float SegmentLength = 100.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem")
-	float SegmentRadius = 10.0f;
+	float SegmentGapLength = 20.0f;
+
+	// Radius params
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem")
+	int32 TaperType = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem")
 	float BaseRadius = 20.0f;
@@ -47,15 +52,34 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem")
 	int32 StemNumSides = 12; // Default to 12
 
+	// Direction params
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem")
-	float SegmentGapLength = 20.0f;
+	float GrowTowardProbability = 0.5f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem")
+	float GrowAwayProbability = 0.2f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem")
+	float GrowAwayAmount = 0.25;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem")
+	float GrowTowardAmount = 0.25;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem")
+	float Randomness = 0.3f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem")
+	FVector TargetPoint = FVector(0, 0, 1);
 
 	// Generate the stem geometry
 	void GenerateStem();
 	void GenerateCylinder(FVector Start, FVector End, float Radius, int32 NumSides, TArray<FVector>& Vertices, TArray<int32>& Triangles);
 
+private:
+	// helper functions - may move some
+	FVector GenerateRandomPerpendicularVector(const FVector& BaseVector);
+
 protected:
 	void GenerateRing(FVector Center, FVector Direction, FVector UpVector, float Radius, TArray<FVector>& RingVertices);
 	void ConnectRings(const TArray<FVector>& RingA, const TArray<FVector>& RingB, TArray<FVector>& Vertices, TArray<int32>& Triangles, int32& BaseIndex);
-	void CreateTransitionGeometry(const TArray<FVector>& LastRingVertices, const TArray<FVector>& NextRingVertices, TArray<FVector>& Vertices, TArray<int32>& Triangles);
 };

@@ -48,13 +48,26 @@ void AProceduralStem::GenerateStem()
 	FVector RightVector = FVector(1, 0, 0);
 	FVector UpVector = FVector(0, 1, 0);
 
+	FVector PerpVector = GenerateRandomPerpendicularVector(TargetPoint);
+
 	TArray<FVector> LastRingVertices;
 
 	for (int32 i = 0; i < NumSegments; ++i)
 	{
 		// interpolate radius for this segment
-		float CurrentRadius = FMath::Lerp(BaseRadius, TopRadius, static_cast<float>(i) / NumSegments);
-		// float CurrentRadius = BaseRadius * FMath::Pow(TopRadius / BaseRadius, static_cast<float>(i) / NumSegments);
+		float CurrentRadius;
+		if (TaperType == 0)
+		{
+			CurrentRadius = FMath::Lerp(BaseRadius, TopRadius, static_cast<float>(i) / NumSegments);
+		}
+		else if (TaperType == 1)
+		{
+			CurrentRadius = BaseRadius * FMath::Pow(TopRadius / BaseRadius, static_cast<float>(i) / NumSegments);
+		}
+		else
+		{
+			CurrentRadius = BaseRadius;
+		}
 
 		// Determine the next segment's end pos
 		FVector NextPosition = CurrentPosition + (CurrentDirection * SegmentLength);
@@ -81,15 +94,52 @@ void AProceduralStem::GenerateStem()
 		CurrentPosition = NextPosition + (CurrentDirection * SegmentGapLength);
 
 		// Apply random tilt
-		FRotator RandomTilt = FRotator(FMath::RandRange(-30.0f, 30.0f), FMath::RandRange(-30.0f, 30.0f), 0);
+		// probability check to determine growth behavior
+		float RandomValue = FMath::FRand(); // rand val between 0.0 and 1.0
+		
+		//Determine the bias direction based on probabilities
+		FVector BiasDirection;
+		if (RandomValue < GrowTowardProbability)
+		{
+			// grow toward the target point
+			BiasDirection = FMath::Lerp(CurrentDirection, TargetPoint, GrowTowardAmount).GetSafeNormal();
+		}
+		else if (RandomValue < GrowTowardProbability + GrowAwayProbability)
+		{
+			//  Grow away from the target point
+			BiasDirection = FMath::Lerp(CurrentDirection, PerpVector, GrowAwayAmount).GetSafeNormal();
+		}
+		else
+		{
+			// completely random growth
+			FVector TempRandomDirection = FVector(FMath::FRandRange(-1.0f , 1.0f), FMath::FRandRange(-1.0f, 1.0f), FMath::FRandRange(-1.0f, 1.0f)).GetSafeNormal();
+			BiasDirection = FMath::Lerp(CurrentDirection, TempRandomDirection, Randomness).GetSafeNormal();
+		}
+
+		// apply randomness to the bias direction
+		FRotator RandomTilt = FRotator(
+			FMath::RandRange(-Randomness * 30.0f, Randomness * 30.0f),
+			FMath::RandRange(-Randomness * 30.0f, Randomness * 30.0f),
+			0
+		);
 		FQuat TiltQuat = FQuat(RandomTilt);
 
-		CurrentDirection = TiltQuat.RotateVector(CurrentDirection).GetSafeNormal();
-		RightVector = TiltQuat.RotateVector(RightVector).GetSafeNormal();
+		// combine the bias direction and randomness
+		CurrentDirection = TiltQuat.RotateVector(BiasDirection).GetSafeNormal();
+
+		// update right and up vectors
+		RightVector = FVector::CrossProduct(UpVector, CurrentDirection).GetSafeNormal();
 		UpVector = FVector::CrossProduct(CurrentDirection, RightVector).GetSafeNormal();
 
-		// Ensure RightVector stays perpendicular to the new direction
-		RightVector = FVector::CrossProduct(UpVector, CurrentDirection).GetSafeNormal();
+		//FRotator RandomTilt = FRotator(FMath::RandRange(-30.0f, 30.0f), FMath::RandRange(-30.0f, 30.0f), 0);
+		//FQuat TiltQuat = FQuat(RandomTilt);
+
+		//CurrentDirection = TiltQuat.RotateVector(CurrentDirection).GetSafeNormal();
+		//RightVector = TiltQuat.RotateVector(RightVector).GetSafeNormal();
+		//UpVector = FVector::CrossProduct(CurrentDirection, RightVector).GetSafeNormal();
+
+		//// Ensure RightVector stays perpendicular to the new direction
+		//RightVector = FVector::CrossProduct(UpVector, CurrentDirection).GetSafeNormal();
 
 		/*FRotator RandomDirection = FRotator(FMath::RandRange(-30.0f, 30.0f), FMath::RandRange(-30.0f, 30.0f), 0);
 		CurrentDirection = RandomDirection.RotateVector(CurrentDirection).GetSafeNormal();*/
@@ -194,4 +244,41 @@ void AProceduralStem::ConnectRings(
 	Vertices.Append(RingA);
 	Vertices.Append(RingB);
 	BaseIndex += RingA.Num() + RingB.Num();
+}
+
+FVector AProceduralStem::GenerateRandomPerpendicularVector(const FVector& BaseVector)
+{
+	// ensure non zero length
+	if (!BaseVector.IsNearlyZero())
+	{
+		// choose an arbitrary vector dynamically
+		FVector ArbitraryVector;
+
+		// avoid parallel vectors by choosing one with non-zero cross product
+		if (FMath::Abs(BaseVector.X) <= FMath::Abs(BaseVector.Y) && FMath::Abs(BaseVector.X) <= FMath::Abs(BaseVector.Z))
+		{
+			ArbitraryVector = FVector(1, 0, 0); // use x axis if base vector is predominantly in x
+		} 
+		else if (FMath::Abs(BaseVector.Y) <= FMath::Abs(BaseVector.Z))
+		{
+			ArbitraryVector = FVector(0, 1, 0); // use y axis if mostly in y
+		}
+		else
+		{
+			ArbitraryVector = FVector(0, 0, 1); // otherwise use z
+		}
+
+		// calculate the perpendicular vector using the cross product
+		FVector PerpendicularVector = FVector::CrossProduct(BaseVector, ArbitraryVector).GetSafeNormal();
+
+		// add randomness by rotating around basevactor
+		float RandomAngle = FMath::FRandRange(0.0f, 360.0f); // random angle in degrees
+		FQuat Rotation = FQuat(BaseVector.GetSafeNormal(), FMath::DegreesToRadians(RandomAngle));
+		FVector RandomizedPerpendicular = Rotation.RotateVector(PerpendicularVector);
+
+		return RandomizedPerpendicular.GetSafeNormal();
+	}
+
+	// Fallback to prevent errors if BaseVector is invalid
+	return FVector::ZeroVector;
 }
