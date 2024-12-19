@@ -105,9 +105,22 @@ void AProceduralStem::GenerateStem()
 			BiasDirection = FMath::Lerp(CurrentDirection, TargetPoint, GrowTowardAmount).GetSafeNormal();
 		}
 		else if (RandomValue < GrowTowardProbability + GrowAwayProbability)
-		{
-			//  Grow away from the target point
-			BiasDirection = FMath::Lerp(CurrentDirection, PerpVector, GrowAwayAmount).GetSafeNormal();
+		{			
+			if (GrowCurveType == 1 && i > (NumSegments / 3) * 2)
+			{
+				BiasDirection = FMath::Lerp(CurrentDirection, FVector(0, 0, -1), GrowAwayAmount).GetSafeNormal();
+			}
+
+			else if (GrowCurveType == 2 && i > NumSegments / 2)
+			{
+				BiasDirection = FMath::Lerp(CurrentDirection, FVector(0, 0, -1), GrowAwayAmount).GetSafeNormal();
+			}
+
+			else
+			{
+				//  Grow away from the target point
+				BiasDirection = FMath::Lerp(CurrentDirection, PerpVector, GrowAwayAmount).GetSafeNormal();
+			}			
 		}
 		else
 		{
@@ -130,19 +143,6 @@ void AProceduralStem::GenerateStem()
 		// update right and up vectors
 		RightVector = FVector::CrossProduct(UpVector, CurrentDirection).GetSafeNormal();
 		UpVector = FVector::CrossProduct(CurrentDirection, RightVector).GetSafeNormal();
-
-		//FRotator RandomTilt = FRotator(FMath::RandRange(-30.0f, 30.0f), FMath::RandRange(-30.0f, 30.0f), 0);
-		//FQuat TiltQuat = FQuat(RandomTilt);
-
-		//CurrentDirection = TiltQuat.RotateVector(CurrentDirection).GetSafeNormal();
-		//RightVector = TiltQuat.RotateVector(RightVector).GetSafeNormal();
-		//UpVector = FVector::CrossProduct(CurrentDirection, RightVector).GetSafeNormal();
-
-		//// Ensure RightVector stays perpendicular to the new direction
-		//RightVector = FVector::CrossProduct(UpVector, CurrentDirection).GetSafeNormal();
-
-		/*FRotator RandomDirection = FRotator(FMath::RandRange(-30.0f, 30.0f), FMath::RandRange(-30.0f, 30.0f), 0);
-		CurrentDirection = RandomDirection.RotateVector(CurrentDirection).GetSafeNormal();*/
 	}
 
 	TArray<FVector> Normals;
@@ -162,43 +162,6 @@ void AProceduralStem::GenerateStem()
 
 	// create the mesh section
 	StemMesh->CreateMeshSection(0, Vertices, Triangles, Normals, UV0, VertexColors,Tangents, true);
-}
-
-// Generate a single cylinder
-void AProceduralStem::GenerateCylinder(FVector Start, FVector End, float Radius, int32 LocalNumSides, TArray<FVector>& Vertices, TArray<int32>& Triangles)
-{
-	const float AngleStep = 360.0f / LocalNumSides;
-
-	FVector Up = (End - Start).GetSafeNormal();
-	FVector Right = FVector::CrossProduct(Up, FVector(0, 1, 0)).GetSafeNormal();
-	FVector Forward = FVector::CrossProduct(Right, Up).GetSafeNormal();
-
-	int32 BaseIndex = Vertices.Num();
-	
-	for (int32 i = 0; i <= LocalNumSides; ++i)
-	{
-		float Angle = FMath::DegreesToRadians(i * AngleStep);
-		FVector Offset = (FMath::Cos(Angle) * Right + FMath::Sin(Angle) * Forward) * Radius;
-
-		Vertices.Add(Start + Offset);
-		Vertices.Add(End + Offset);
-
-		if (i < LocalNumSides)
-		{
-			int32 Current = BaseIndex + (i * 2);
-			int32 Next = BaseIndex + ((i + 1) * 2);
-
-			// Triangle 1
-			Triangles.Add(Current);
-			Triangles.Add(Next);
-			Triangles.Add(Current + 1);
-
-			// Triangle 2
-			Triangles.Add(Next);
-			Triangles.Add(Next + 1);
-			Triangles.Add(Current + 1);
-		}
-	}
 }
 
 void AProceduralStem::GenerateRing(FVector Center, FVector Direction, FVector UpVector, float Radius, TArray<FVector>& RingVertices)

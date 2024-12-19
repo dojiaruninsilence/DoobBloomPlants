@@ -66,6 +66,9 @@ public:
 	float GrowTowardAmount = 0.25;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem")
+	int32 GrowCurveType = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem")
 	float Randomness = 0.3f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem")
@@ -73,7 +76,6 @@ public:
 
 	// Generate the stem geometry
 	void GenerateStem();
-	void GenerateCylinder(FVector Start, FVector End, float Radius, int32 NumSides, TArray<FVector>& Vertices, TArray<int32>& Triangles);
 
 private:
 	// helper functions - may move some
