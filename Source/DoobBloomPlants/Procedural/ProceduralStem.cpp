@@ -4,6 +4,9 @@
 #include "ProceduralStem.h"
 #include "ProceduralStemNode.h"
 
+#include "GeometryUtilities.h"
+#include "MathUtililities.h"
+
 // Sets default values
 AProceduralStem::AProceduralStem()
 {
@@ -97,7 +100,7 @@ void AProceduralStem::GenerateStem()
 	FVector RightVector = FVector(1, 0, 0);
 	FVector UpVector = FVector(0, 1, 0);
 
-	FVector PerpVector = GenerateRandomPerpendicularVector(TargetPoint);
+	FVector PerpVector = MathUtilities::GenerateRandomPerpendicularVector(TargetPoint);
 
 	TArray<FVector> LastRingVertices;
 
@@ -133,20 +136,20 @@ void AProceduralStem::GenerateStem()
 
 		// Generate the ring at the start of this segment
 		TArray<FVector> StartRingVertices;
-		GenerateRing(CurrentPosition, CurrentDirection, UpVector, CurrentRadius, StemNumSides, StartRingVertices);
+		GeometryUtilities::GenerateRing(CurrentPosition, CurrentDirection, UpVector, CurrentRadius, StemNumSides, StartRingVertices);
 
 		// Generate the ring at the end of this segment
 		TArray<FVector> EndRingVertices;
-		GenerateRing(NextPosition, CurrentDirection, UpVector, CurrentRadius, StemNumSides, EndRingVertices);
+		GeometryUtilities::GenerateRing(NextPosition, CurrentDirection, UpVector, CurrentRadius, StemNumSides, EndRingVertices);
 
 		// connect the rings with triangles
 		if (i > 0) // skip connecting for the first segment
 		{
-			ConnectRings(LastRingVertices, StartRingVertices, Vertices, Triangles, BaseIndex);
+			GeometryUtilities::ConnectRings(LastRingVertices, StartRingVertices, Vertices, Triangles, BaseIndex);
 		}
 
 		// Generate the cylinder for this segment
-		ConnectRings(StartRingVertices, EndRingVertices, Vertices, Triangles, BaseIndex);
+		GeometryUtilities::ConnectRings(StartRingVertices, EndRingVertices, Vertices, Triangles, BaseIndex);
 		
 		// Update the current position and apply a random rotation
 		LastRingVertices = EndRingVertices;
@@ -258,85 +261,3 @@ float AProceduralStem::GetEndRadius()
 	return EndRadius;
 }
 
-
-FVector AProceduralStem::GenerateRandomPerpendicularVector(const FVector& BaseVector)
-{
-	// ensure non zero length
-	if (!BaseVector.IsNearlyZero())
-	{
-		// choose an arbitrary vector dynamically
-		FVector ArbitraryVector;
-
-		// avoid parallel vectors by choosing one with non-zero cross product
-		if (FMath::Abs(BaseVector.X) <= FMath::Abs(BaseVector.Y) && FMath::Abs(BaseVector.X) <= FMath::Abs(BaseVector.Z))
-		{
-			ArbitraryVector = FVector(1, 0, 0); // use x axis if base vector is predominantly in x
-		} 
-		else if (FMath::Abs(BaseVector.Y) <= FMath::Abs(BaseVector.Z))
-		{
-			ArbitraryVector = FVector(0, 1, 0); // use y axis if mostly in y
-		}
-		else
-		{
-			ArbitraryVector = FVector(0, 0, 1); // otherwise use z
-		}
-
-		// calculate the perpendicular vector using the cross product
-		FVector PerpendicularVector = FVector::CrossProduct(BaseVector, ArbitraryVector).GetSafeNormal();
-
-		// add randomness by rotating around basevactor
-		float RandomAngle = FMath::FRandRange(0.0f, 360.0f); // random angle in degrees
-		FQuat Rotation = FQuat(BaseVector.GetSafeNormal(), FMath::DegreesToRadians(RandomAngle));
-		FVector RandomizedPerpendicular = Rotation.RotateVector(PerpendicularVector);
-
-		return RandomizedPerpendicular.GetSafeNormal();
-	}
-
-	// Fallback to prevent errors if BaseVector is invalid
-	return FVector::ZeroVector;
-}
-
-void GenerateRing(FVector Center, FVector Direction, FVector UpVector, float Radius, int32 NumSides, TArray<FVector>& RingVertices)
-{
-	const float AngleStep = 360.0f / NumSides;
-	FVector Right = FVector::CrossProduct(Direction, UpVector).GetSafeNormal();
-	FVector Forward = FVector::CrossProduct(Right, Direction).GetSafeNormal();
-
-	for (int i = 0; i <= NumSides; ++i)
-	{
-		float Angle = FMath::DegreesToRadians(i * AngleStep);
-		FVector Offset = (FMath::Cos(Angle) * Right + FMath::Sin(Angle) * Forward) * Radius;
-		RingVertices.Add(Center + Offset);
-	}
-}
-
-void ConnectRings(
-	const TArray<FVector>& RingA,
-	const TArray<FVector>& RingB,
-	TArray<FVector>& Vertices,
-	TArray<int32>& Triangles,
-	int32& BaseIndex
-)
-{
-	for (int32 i = 0; i < RingA.Num(); ++i)
-	{
-		int32 CurrentA = BaseIndex + i;
-		int32 NextA = BaseIndex + (i + 1) % RingA.Num();
-
-		int32 CurrentB = BaseIndex + RingA.Num() + i;
-		int32 NextB = BaseIndex + RingA.Num() + ((i + 1) % RingB.Num());
-
-		// Triangle 1
-		Triangles.Add(CurrentA);
-		Triangles.Add(NextA);
-		Triangles.Add(CurrentB);
-
-		// Triangle 2
-		Triangles.Add(NextA);
-		Triangles.Add(NextB);
-		Triangles.Add(CurrentB);
-	}
-	Vertices.Append(RingA);
-	Vertices.Append(RingB);
-	BaseIndex += RingA.Num() + RingB.Num();
-}

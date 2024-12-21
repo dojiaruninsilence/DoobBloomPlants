@@ -4,6 +4,9 @@
 #include "ProceduralStemNode.h"
 #include "ProceduralStem.h"
 
+#include "GeometryUtilities.h"
+#include "MathUtililities.h"
+
 // Sets default values
 AProceduralStemNode::AProceduralStemNode()
 {
@@ -89,57 +92,50 @@ void AProceduralStemNode::GenerateNode()
 	float NextRadius = StartRadius;
 	float RadiusModified = StartRadius + RadiusChangeAmount;
 
-	// number of segments
-	int32 NodeSegments = 20;
+	float StartSegmentLength = 0.0f;
+	float EndSegmentLength = RadiusModified * 0.5;
+	float CurrentSegmentLength = StartSegmentLength;
 
 	for (int32 i = 0; i <= NodeSegments; ++i)
 	{
 		// interpolate radius to form a spherical bulge
-		float Fraction = static_cast<float>(i) / NodeSegments;
 		CurrentRadius = NextRadius;
-
 		CurrentPosition = NextPosition;
 
 		// generate the ring at this position
 		TArray<FVector> CurrentRingVertices;
-		GenerateRing(CurrentPosition, CurrentDirection, UpVector, CurrentRadius, StemNodeNumSides, CurrentRingVertices);
+		GeometryUtilities::GenerateRing(CurrentPosition, CurrentDirection, UpVector, CurrentRadius, StemNodeNumSides, CurrentRingVertices);
 
 		// Connect the Previous ring to the current ring
 		if (i > 0)
 		{
-			ConnectRings(LastRingVertices, CurrentRingVertices, Vertices, Triangles, BaseIndex);
+			GeometryUtilities::ConnectRings(LastRingVertices, CurrentRingVertices, Vertices, Triangles, BaseIndex);
 		}
 
 		// update variables for the next iteration
 		LastRingVertices = CurrentRingVertices;
 
-		// calc the position for this ring
-		NextPosition = CurrentPosition + (CurrentDirection * (StartRadius * 0.5f));
-
 		int32 curveType = 0;
 		int32 steps = NodeSegments / 2;
 		if (i <= steps)
 		{			
-			NextRadius = RadiusChange(StartRadius, RadiusModified, CurrentRadius, steps, i, curveType);
+			NextRadius = MathUtilities::FloatChangeWithCurve(StartRadius, RadiusModified, CurrentRadius, steps, i, curveType);
+			CurrentSegmentLength = MathUtilities::FloatChangeWithCurve(StartSegmentLength, EndSegmentLength, CurrentSegmentLength, steps, i, curveType);
 		}
-		/*else if (i == NodeSegments - 1)
-		{
-			NextRadius = EndRadius;
-		}*/
 		else
 		{
 			int32 step = i - steps;
-			NextRadius = RadiusChange(RadiusModified, EndRadius, CurrentRadius, steps, step, curveType+1);
-			UE_LOG(LogTemp, Log, TEXT("Node Segment step %d"), step);
+			NextRadius = MathUtilities::FloatChangeWithCurve(RadiusModified, EndRadius, CurrentRadius, steps, step, curveType+1);
+			CurrentSegmentLength = MathUtilities::FloatChangeWithCurve(EndSegmentLength, StartSegmentLength, CurrentSegmentLength, steps, step, curveType + 1);
 		}
 
-		UE_LOG(LogTemp, Log, TEXT("Node Segment: %d, Fraction: %f, CurrentRadius: %f"), i, Fraction, CurrentRadius);
+		// calc the position for this ring
+		NextPosition = CurrentPosition + (CurrentDirection * CurrentSegmentLength);
 
 	}
 
 	if (Vertices.Num() == 0 || Triangles.Num() == 0)
 	{
-		UE_LOG(LogTemp, Error, TEXT("No vertices or triangles generated."));
 		return;
 	}
 
@@ -165,61 +161,4 @@ void AProceduralStemNode::GenerateNode()
 
 	// Create the node mesh section
 	NodeMesh->CreateMeshSection(0, Vertices, Triangles, Normals, UV0, VertexColors, Tangents, true);
-}
-
-float EaseOutIncrement(int32 TotalSteps, int32 CurrentStep)
-{
-	// normalize the step (from 0 to 1)
-	float t = (float)CurrentStep / (float)TotalSteps;
-	// ease out curve for increment scaling
-	return FMath::Lerp(1.0f, 0.0f, t);
-}
-
-float EaseInIncrement(int32 TotalSteps, int32 CurrentStep)
-{
-	// normalize the current step / total steps
-	float normalizedStep = FMath::Clamp((float)CurrentStep / (float)TotalSteps, 0.0f, 1.0f);
-
-	return normalizedStep * normalizedStep;
-}
-
-float RadiusChange(float StartRadius, float EndRadius, float CurrentRadius, int32 TotalSteps, int32 CurrentStep, int32 CurveType)
-{
-	float ReturnRadius = CurrentRadius;
-
-	// calc the scale
-	float scale = 0.0f;
-	float ChangeAmount = 0.0f;
-
-	if (CurveType == 0)
-	{
-		scale = EaseOutIncrement(TotalSteps, CurrentStep);
-		// calc the change
-		ChangeAmount = (EndRadius - StartRadius) * scale / TotalSteps;
-	}
-	else if (CurveType == 1)
-	{
-		scale = EaseInIncrement(TotalSteps, CurrentStep);
-		// calc the change
-		ChangeAmount = (EndRadius - StartRadius) * scale;
-		UE_LOG(LogTemp, Log, TEXT("Node Segment scale %f"), scale);
-	}
-
-	// get new radius
-	ReturnRadius += ChangeAmount;
-	UE_LOG(LogTemp, Log, TEXT("Node Segment start radius: %f, end radius: %f, change: %f, return: %f"), StartRadius, EndRadius, ChangeAmount, ReturnRadius);
-
-	// make sure not over the end
-
-	if (ChangeAmount < 0)
-	{
-		ReturnRadius = FMath::Clamp(ReturnRadius, EndRadius, StartRadius);
-	}
-	else
-	{
-		ReturnRadius = FMath::Clamp(ReturnRadius, StartRadius, EndRadius);
-	}
-
-	return ReturnRadius;
-
 }

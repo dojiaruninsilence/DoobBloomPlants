@@ -57,6 +57,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem Node")
 	int32 StemNodeNumSides = 12;
 
+	// length parameters
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem Node")
+	int32 NodeSegments = 20;
+
 	void AttachToStem(AProceduralStem* Stem);
 	void DetachFromStem(AProceduralStem* Stem);
 
@@ -66,6 +70,3 @@ protected:
 
 };
 
-float EaseOutIncrement(int32 TotalSteps, int32 CurrentStep);
-float EaseInIncrement(int32 TotalSteps, int32 CurrentStep);
-float RadiusChange(float StartRadius, float EndRadius, float CurrentRadius, int32 TotalSteps, int32 CurrentStep, int32 CurveType);

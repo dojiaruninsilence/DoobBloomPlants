@@ -13,6 +13,13 @@ public class DoobBloomPlants : ModuleRules
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 
+        // Add include paths for Utilities and other custom folders
+        PublicIncludePaths.AddRange(new string[]
+        {
+            Path.Combine(ModuleDirectory, "Procedural"),
+            Path.Combine(ModuleDirectory, "Utilities")
+        });
+
         // Uncomment if you are using Slate UI
         // PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
 
