@@ -2,6 +2,7 @@
 
 
 #include "ProceduralStem.h"
+#include "ProceduralStemNode.h"
 
 // Sets default values
 AProceduralStem::AProceduralStem()
@@ -22,7 +23,7 @@ AProceduralStem::AProceduralStem()
 void AProceduralStem::BeginPlay()
 {
 	Super::BeginPlay();
-	GenerateStem();
+	//GenerateStem();
 	
 }
 
@@ -31,6 +32,53 @@ void AProceduralStem::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+}
+
+void AProceduralStem::SetParentNode(AProceduralStemNode* NewParentNode)
+{
+	if (NewParentNode)
+	{
+		ParentNode = NewParentNode;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Attempted to set a null parent node."));
+	}
+}
+
+void AProceduralStem::SetEndNode(AProceduralStemNode* NewEndNode)
+{
+	if (NewEndNode)
+	{
+		// if there was a previous node, detach it
+		if (EndNode)
+		{
+			EndNode->DetachFromStem(this);
+		}
+
+		// attach new end node
+		EndNode = NewEndNode;
+		EndNode->AttachToStem(this); // need to add to node class first
+
+		// update the procedural mesh if needed
+		//GenerateStem(); // Rebuild Stem to reflect new endpoint connection
+
+		UE_LOG(LogTemp, Log, TEXT("End node successfully set to: %s"), *NewEndNode->GetName());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Attempted to set a null end node."));
+	}
+}
+
+AProceduralStemNode* AProceduralStem::GetParentNode()
+{
+	return ParentNode;
+}
+
+AProceduralStemNode* AProceduralStem::GetEndNode()
+{
+	return EndNode;
 }
 
 // Generate the full stem
@@ -43,6 +91,7 @@ void AProceduralStem::GenerateStem()
 	int32 BaseIndex = 0;
 
 	FVector CurrentPosition = FVector::ZeroVector;
+	FVector NextPosition = FVector::ZeroVector;
 	FVector CurrentDirection = FVector(0, 0, 1); // Initial growth direction up
 
 	FVector RightVector = FVector(1, 0, 0);
@@ -51,6 +100,10 @@ void AProceduralStem::GenerateStem()
 	FVector PerpVector = GenerateRandomPerpendicularVector(TargetPoint);
 
 	TArray<FVector> LastRingVertices;
+
+	// store the start position and direction
+	StartPosition = CurrentPosition;
+	StartDirection = CurrentDirection;
 
 	for (int32 i = 0; i < NumSegments; ++i)
 	{
@@ -70,15 +123,21 @@ void AProceduralStem::GenerateStem()
 		}
 
 		// Determine the next segment's end pos
-		FVector NextPosition = CurrentPosition + (CurrentDirection * SegmentLength);
+		NextPosition = CurrentPosition + (CurrentDirection * SegmentLength);
+
+		UE_LOG(LogTemp, Log, TEXT("Generate Stem iteration num: %d, The current position is: %s, The next position is: %s, the current direction is: %s"), i, *CurrentPosition.ToString(), *NextPosition.ToString(), *CurrentDirection.ToString());
+
+		EndDirection = CurrentDirection;
+		EndRadius = CurrentRadius;
+		EndUpVector = UpVector;
 
 		// Generate the ring at the start of this segment
 		TArray<FVector> StartRingVertices;
-		GenerateRing(CurrentPosition, CurrentDirection, UpVector, CurrentRadius, StartRingVertices);
+		GenerateRing(CurrentPosition, CurrentDirection, UpVector, CurrentRadius, StemNumSides, StartRingVertices);
 
 		// Generate the ring at the end of this segment
 		TArray<FVector> EndRingVertices;
-		GenerateRing(NextPosition, CurrentDirection, UpVector, CurrentRadius, EndRingVertices);
+		GenerateRing(NextPosition, CurrentDirection, UpVector, CurrentRadius, StemNumSides, EndRingVertices);
 
 		// connect the rings with triangles
 		if (i > 0) // skip connecting for the first segment
@@ -143,7 +202,12 @@ void AProceduralStem::GenerateStem()
 		// update right and up vectors
 		RightVector = FVector::CrossProduct(UpVector, CurrentDirection).GetSafeNormal();
 		UpVector = FVector::CrossProduct(CurrentDirection, RightVector).GetSafeNormal();
+
 	}
+
+
+	// store the end position and direction
+	EndPosition = NextPosition;
 
 	TArray<FVector> Normals;
 	Normals.Init(FVector::UpVector, Vertices.Num());
@@ -164,50 +228,36 @@ void AProceduralStem::GenerateStem()
 	StemMesh->CreateMeshSection(0, Vertices, Triangles, Normals, UV0, VertexColors,Tangents, true);
 }
 
-void AProceduralStem::GenerateRing(FVector Center, FVector Direction, FVector UpVector, float Radius, TArray<FVector>& RingVertices)
+FVector AProceduralStem::GetStartPosition()
 {
-	const float AngleStep = 360.0f / StemNumSides;
-	FVector Right = FVector::CrossProduct(Direction, UpVector).GetSafeNormal();
-	FVector Forward = FVector::CrossProduct(Right, Direction).GetSafeNormal();
-
-	for (int i = 0; i <= StemNumSides; ++i)
-	{
-		float Angle = FMath::DegreesToRadians(i * AngleStep);
-		FVector Offset = (FMath::Cos(Angle) * Right + FMath::Sin(Angle) * Forward) * Radius;
-		RingVertices.Add(Center + Offset);
-	}
+	return StartPosition;
 }
 
-void AProceduralStem::ConnectRings(
-	const TArray<FVector>& RingA,
-	const TArray<FVector>& RingB,
-	TArray<FVector>& Vertices,
-	TArray<int32>& Triangles, 
-	int32& BaseIndex
-)
+FVector AProceduralStem::GetStartDirection()
 {
-	for (int32 i = 0; i < RingA.Num(); ++i)
-	{
-		int32 CurrentA = BaseIndex + i;
-		int32 NextA = BaseIndex + (i + 1) % RingA.Num();
-
-		int32 CurrentB = BaseIndex + RingA.Num() + i;
-		int32 NextB = BaseIndex + RingA.Num() + ((i + 1) % RingB.Num());
-
-		// Triangle 1
-		Triangles.Add(CurrentA);
-		Triangles.Add(NextA);
-		Triangles.Add(CurrentB);
-
-		// Triangle 2
-		Triangles.Add(NextA);
-		Triangles.Add(NextB);
-		Triangles.Add(CurrentB);
-	}
-	Vertices.Append(RingA);
-	Vertices.Append(RingB);
-	BaseIndex += RingA.Num() + RingB.Num();
+	return StartDirection;
 }
+
+FVector AProceduralStem::GetEndPosition()
+{
+	return EndPosition;
+}
+
+FVector AProceduralStem::GetEndDirection()
+{
+	return EndDirection;
+}
+
+FVector AProceduralStem::GetEndUpVector()
+{
+	return EndUpVector;
+}
+
+float AProceduralStem::GetEndRadius()
+{
+	return EndRadius;
+}
+
 
 FVector AProceduralStem::GenerateRandomPerpendicularVector(const FVector& BaseVector)
 {
@@ -244,4 +294,49 @@ FVector AProceduralStem::GenerateRandomPerpendicularVector(const FVector& BaseVe
 
 	// Fallback to prevent errors if BaseVector is invalid
 	return FVector::ZeroVector;
+}
+
+void GenerateRing(FVector Center, FVector Direction, FVector UpVector, float Radius, int32 NumSides, TArray<FVector>& RingVertices)
+{
+	const float AngleStep = 360.0f / NumSides;
+	FVector Right = FVector::CrossProduct(Direction, UpVector).GetSafeNormal();
+	FVector Forward = FVector::CrossProduct(Right, Direction).GetSafeNormal();
+
+	for (int i = 0; i <= NumSides; ++i)
+	{
+		float Angle = FMath::DegreesToRadians(i * AngleStep);
+		FVector Offset = (FMath::Cos(Angle) * Right + FMath::Sin(Angle) * Forward) * Radius;
+		RingVertices.Add(Center + Offset);
+	}
+}
+
+void ConnectRings(
+	const TArray<FVector>& RingA,
+	const TArray<FVector>& RingB,
+	TArray<FVector>& Vertices,
+	TArray<int32>& Triangles,
+	int32& BaseIndex
+)
+{
+	for (int32 i = 0; i < RingA.Num(); ++i)
+	{
+		int32 CurrentA = BaseIndex + i;
+		int32 NextA = BaseIndex + (i + 1) % RingA.Num();
+
+		int32 CurrentB = BaseIndex + RingA.Num() + i;
+		int32 NextB = BaseIndex + RingA.Num() + ((i + 1) % RingB.Num());
+
+		// Triangle 1
+		Triangles.Add(CurrentA);
+		Triangles.Add(NextA);
+		Triangles.Add(CurrentB);
+
+		// Triangle 2
+		Triangles.Add(NextA);
+		Triangles.Add(NextB);
+		Triangles.Add(CurrentB);
+	}
+	Vertices.Append(RingA);
+	Vertices.Append(RingB);
+	BaseIndex += RingA.Num() + RingB.Num();
 }

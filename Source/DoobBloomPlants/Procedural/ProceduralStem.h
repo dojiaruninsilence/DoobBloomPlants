@@ -5,7 +5,11 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "ProceduralMeshComponent.h"
+
 #include "ProceduralStem.generated.h"
+
+// forward declarations
+class AProceduralStemNode;
 
 UCLASS()
 class DOOBBLOOMPLANTS_API AProceduralStem : public AActor
@@ -74,14 +78,52 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem")
 	FVector TargetPoint = FVector(0, 0, 1);
 
+	// For Connecting to Nodes
+	UPROPERTY(BlueprintReadWrite, Category = "Stem")
+	AProceduralStemNode* ParentNode;
+
+	UPROPERTY(BlueprintReadWrite, Category = "Stem")
+	AProceduralStemNode* EndNode;
+
+	UFUNCTION(BlueprintCallable, Category = "Stem")
+	void SetParentNode(AProceduralStemNode* NewParentNode);
+
+	UFUNCTION(BlueprintCallable, Category = "Stem")
+	void SetEndNode(AProceduralStemNode* NewEndNode);
+
+	UFUNCTION(BlueprintCallable, Category = "Stem")
+	AProceduralStemNode* GetParentNode();
+
+	UFUNCTION(BlueprintCallable, Category = "Stem")
+	AProceduralStemNode* GetEndNode();
+
 	// Generate the stem geometry
+	UFUNCTION(BlueprintCallable, Category = "Stem")
 	void GenerateStem();
+
+	
+
+	FVector GetStartPosition();
+	FVector GetStartDirection();
+	FVector GetEndPosition();
+	FVector GetEndDirection();
+	FVector GetEndUpVector();
+	float GetEndRadius();
 
 private:
 	// helper functions - may move some
 	FVector GenerateRandomPerpendicularVector(const FVector& BaseVector);
 
 protected:
-	void GenerateRing(FVector Center, FVector Direction, FVector UpVector, float Radius, TArray<FVector>& RingVertices);
-	void ConnectRings(const TArray<FVector>& RingA, const TArray<FVector>& RingB, TArray<FVector>& Vertices, TArray<int32>& Triangles, int32& BaseIndex);
+	
+
+	FVector StartPosition;
+	FVector StartDirection;
+	FVector EndPosition;
+	FVector EndDirection;
+	FVector EndUpVector;
+	float EndRadius;
 };
+
+void GenerateRing(FVector Center, FVector Direction, FVector UpVector, float Radius, int32 NumSides, TArray<FVector>& RingVertices);
+void ConnectRings(const TArray<FVector>& RingA, const TArray<FVector>& RingB, TArray<FVector>& Vertices, TArray<int32>& Triangles, int32& BaseIndex);
