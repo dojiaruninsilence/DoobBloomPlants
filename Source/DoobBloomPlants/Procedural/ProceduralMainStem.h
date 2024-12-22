@@ -27,7 +27,20 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	// length params
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem")
+	int32 NumStems = 3;
+
+	// radius params
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem")
+	float BaseRadius = 20.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem")
+	float TopRadius = 5.0f;
+
 	void GenerateMainStem();
+
+	void GenerateMainStemChain();
 
 private:
 
@@ -40,4 +53,10 @@ private:
 
 	UPROPERTY()
 	AProceduralStemNode* MainStemNode;
+
+	UPROPERTY()
+	TArray<AProceduralStem*> Stems;
+
+	UPROPERTY()
+	TArray<AProceduralStemNode*> Nodes;
 };

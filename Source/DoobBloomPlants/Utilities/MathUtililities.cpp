@@ -98,4 +98,9 @@ namespace MathUtilities {
 		return ReturnRadius;
 
 	}
+
+	void InterpolateBetweenBounds(float StartBound, float EndBound, int32 NumSegments, int32 SegmentIndex, float& StartValue, float& EndValue) {
+		StartValue = StartBound + (SegmentIndex / (float)NumSegments) * (EndBound - StartBound);
+		EndValue = StartBound + ((SegmentIndex + 1) / (float)NumSegments) * (EndBound - StartBound);
+	}
 }

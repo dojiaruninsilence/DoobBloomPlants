@@ -93,20 +93,21 @@ void AProceduralStem::GenerateStem()
 	// Initialize vertex index
 	int32 BaseIndex = 0;
 
-	FVector CurrentPosition = FVector::ZeroVector;
-	FVector NextPosition = FVector::ZeroVector;
-	FVector CurrentDirection = FVector(0, 0, 1); // Initial growth direction up
+	FVector CurrentPosition = StartPosition;
+	FVector NextPosition = StartPosition;
+
+	FVector CurrentDirection = StartDirection; 
 
 	FVector RightVector = FVector(1, 0, 0);
-	FVector UpVector = FVector(0, 1, 0);
+	FVector UpVector = StartUpVector;
 
 	FVector PerpVector = MathUtilities::GenerateRandomPerpendicularVector(TargetPoint);
 
 	TArray<FVector> LastRingVertices;
 
 	// store the start position and direction
-	StartPosition = CurrentPosition;
-	StartDirection = CurrentDirection;
+	//StartPosition = CurrentPosition;
+	//StartDirection = CurrentDirection;
 
 	for (int32 i = 0; i < NumSegments; ++i)
 	{
@@ -231,14 +232,13 @@ void AProceduralStem::GenerateStem()
 	StemMesh->CreateMeshSection(0, Vertices, Triangles, Normals, UV0, VertexColors,Tangents, true);
 }
 
-FVector AProceduralStem::GetStartPosition()
-{
-	return StartPosition;
-}
-
 FVector AProceduralStem::GetStartDirection()
 {
 	return StartDirection;
+}
+
+void AProceduralStem::SetStartDirection(FVector Direcetion) {
+	StartDirection = Direcetion;
 }
 
 FVector AProceduralStem::GetEndPosition()

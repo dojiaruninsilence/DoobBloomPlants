@@ -139,6 +139,10 @@ void AProceduralStemNode::GenerateNode()
 		return;
 	}
 
+	EndUpVector = UpVector;
+	EndPosition = CurrentPosition;
+	EndDirection = CurrentDirection;
+
 	// Finalize the mesh
 	TArray<FVector> Normals;
 	Normals.Init(FVector::UpVector, Vertices.Num());
@@ -161,4 +165,19 @@ void AProceduralStemNode::GenerateNode()
 
 	// Create the node mesh section
 	NodeMesh->CreateMeshSection(0, Vertices, Triangles, Normals, UV0, VertexColors, Tangents, true);
+}
+
+FVector AProceduralStemNode::GetEndPosition()
+{
+	return EndPosition;
+}
+
+FVector AProceduralStemNode::GetEndDirection()
+{
+	return EndDirection;
+}
+
+FVector AProceduralStemNode::GetEndUpVector()
+{
+	return EndUpVector;
 }

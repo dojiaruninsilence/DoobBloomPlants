@@ -33,6 +33,10 @@ public:
 	UProceduralMeshComponent* StemMesh;
 
 	// Params for stem generation
+	// position params
+	UPROPERTY(BlueprintReadWrite, Category = "Stem")
+	FVector StartPosition = FVector::ZeroVector;
+
 	// length params
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem")
 	int32 NumSegments = 10;
@@ -78,6 +82,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem")
 	FVector TargetPoint = FVector(0, 0, 1);
 
+	UPROPERTY(BlueprintReadWrite, Category = "Stem Node")
+	FVector StartUpVector = FVector(0, 1, 0);
+
 	// For Connecting to Nodes
 	UPROPERTY(BlueprintReadWrite, Category = "Stem")
 	AProceduralStemNode* ParentNode;
@@ -101,10 +108,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Stem")
 	void GenerateStem();
 
-	
-
-	FVector GetStartPosition();
 	FVector GetStartDirection();
+	void SetStartDirection(FVector Direcetion);
 	FVector GetEndPosition();
 	FVector GetEndDirection();
 	FVector GetEndUpVector();
@@ -113,10 +118,7 @@ public:
 private:
 
 protected:
-	
-
-	FVector StartPosition;
-	FVector StartDirection;
+	FVector StartDirection = FVector(0, 0, 1);
 	FVector EndPosition;
 	FVector EndDirection;
 	FVector EndUpVector;

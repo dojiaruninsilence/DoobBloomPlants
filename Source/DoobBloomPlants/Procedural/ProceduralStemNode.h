@@ -66,7 +66,13 @@ public:
 
 	void GenerateNode();
 
-protected:
+	FVector GetEndPosition();
+	FVector GetEndDirection();
+	FVector GetEndUpVector();
 
+protected:
+	FVector EndPosition;
+	FVector EndDirection;
+	FVector EndUpVector;
 };
 
