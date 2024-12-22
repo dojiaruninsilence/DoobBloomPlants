@@ -86,6 +86,7 @@ void AProceduralMainStem::GenerateMainStemChain() {
 	FVector CurrentPosition = FVector::ZeroVector;
 	FVector CurrentDirection = FVector(0, 0, 1);
 	FVector UpVector = FVector(0, 1, 0);
+	PerpVector = MathUtilities::GenerateRandomPerpendicularVector(TargetPoint);
 
 	float CurrentBaseRadius = 0.0f;
 	float CurrentTopRadius = 0.0f;
@@ -98,9 +99,33 @@ void AProceduralMainStem::GenerateMainStemChain() {
 		AProceduralStem* NewStem = GetWorld()->SpawnActor<AProceduralStem>(AProceduralStem::StaticClass());
 		if (NewStem) {
 			NewStem->AttachToComponent(Root, FAttachmentTransformRules::KeepRelativeTransform);
+
+			// position and direction params
 			NewStem->StartPosition = CurrentPosition;
 			NewStem->SetStartDirection(CurrentDirection);
 			NewStem->StartUpVector = UpVector;
+
+			// direction change params
+			NewStem->GrowCurveType = GrowCurveType;
+			NewStem->GrowAwayProbability = GrowAwayProbability;
+			NewStem->GrowTowardProbability = GrowTowardProbability;
+			NewStem->GrowAwayAmount = GrowAwayAmount;
+			NewStem->GrowTowardAmount = GrowTowardAmount;
+			NewStem->Randomness = Randomness;
+			NewStem->PerpVector = PerpVector;
+
+			// curve changes
+			if (GrowCurveType == 1 && i < NumStems / 2) {
+				NewStem->GrowCurveType = 0;
+				NewStem->GrowAwayProbability = GrowTowardProbability;
+				NewStem->GrowTowardProbability = GrowAwayProbability;
+			}
+			else if (GrowCurveType == 1) {
+				NewStem->GrowAwayProbability = GrowAwayProbability;
+				NewStem->GrowTowardProbability = GrowTowardProbability;
+			}
+
+			// radius params
 			NewStem->BaseRadius = CurrentBaseRadius;
 			NewStem->TopRadius = CurrentTopRadius;
 

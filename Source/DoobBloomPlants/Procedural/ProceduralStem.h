@@ -82,7 +82,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem")
 	FVector TargetPoint = FVector(0, 0, 1);
 
-	UPROPERTY(BlueprintReadWrite, Category = "Stem Node")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem")
+	FVector PerpVector = FVector(0, 1, 0);
+
+	UPROPERTY(BlueprintReadWrite, Category = "Stem")
 	FVector StartUpVector = FVector(0, 1, 0);
 
 	// For Connecting to Nodes

@@ -28,15 +28,43 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	// length params
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Main Stem")
 	int32 NumStems = 3;
 
 	// radius params
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Main Stem")
 	float BaseRadius = 20.0f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stem")
-	float TopRadius = 5.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Main Stem")
+	float TopRadius = 0.0f;
+
+	// Direction params
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Main Stem")
+	float GrowTowardProbability = 0.5f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Main Stem")
+	float GrowAwayProbability = 0.2f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Main Stem")
+	float GrowAwayAmount = 0.25;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Main Stem")
+	float GrowTowardAmount = 0.25;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Main Stem")
+	int32 GrowCurveType = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Main Stem")
+	float Randomness = 0.3f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Main Stem")
+	FVector TargetPoint = FVector(0, 0, 1);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Main Stem")
+	FVector PerpVector = FVector(0, 1, 0);
+
+	UPROPERTY(BlueprintReadWrite, Category = "Main Stem")
+	FVector StartUpVector = FVector(0, 1, 0);
 
 	void GenerateMainStem();
 

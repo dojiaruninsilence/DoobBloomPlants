@@ -96,12 +96,13 @@ void AProceduralStem::GenerateStem()
 	FVector CurrentPosition = StartPosition;
 	FVector NextPosition = StartPosition;
 
-	FVector CurrentDirection = StartDirection; 
+	FVector CurrentDirection = StartDirection;
+	FVector LastDirection = StartDirection;
 
 	FVector RightVector = FVector(1, 0, 0);
 	FVector UpVector = StartUpVector;
 
-	FVector PerpVector = MathUtilities::GenerateRandomPerpendicularVector(TargetPoint);
+	//FVector PerpVector = MathUtilities::GenerateRandomPerpendicularVector(TargetPoint);
 
 	TArray<FVector> LastRingVertices;
 
@@ -126,6 +127,17 @@ void AProceduralStem::GenerateStem()
 			CurrentRadius = BaseRadius;
 		}
 
+		// generate joint ring
+		TArray<FVector> BendRingVertices;
+		if (i > 0) {
+			FVector BendPosition = (CurrentPosition + NextPosition) * 0.5f;
+			FVector BendDirection = (CurrentDirection + LastDirection).GetSafeNormal();
+			float BendRadius = CurrentRadius + (CurrentRadius * 0.05f);
+			GeometryUtilities::GenerateRing(BendPosition, BendDirection, UpVector, BendRadius, StemNumSides, BendRingVertices);
+		}
+
+		LastDirection = CurrentDirection;
+
 		// Determine the next segment's end pos
 		NextPosition = CurrentPosition + (CurrentDirection * SegmentLength);
 
@@ -146,7 +158,8 @@ void AProceduralStem::GenerateStem()
 		// connect the rings with triangles
 		if (i > 0) // skip connecting for the first segment
 		{
-			GeometryUtilities::ConnectRings(LastRingVertices, StartRingVertices, Vertices, Triangles, BaseIndex);
+			GeometryUtilities::ConnectRings(LastRingVertices, BendRingVertices, Vertices, Triangles, BaseIndex);
+			GeometryUtilities::ConnectRings(BendRingVertices, StartRingVertices, Vertices, Triangles, BaseIndex);
 		}
 
 		// Generate the cylinder for this segment
@@ -154,7 +167,7 @@ void AProceduralStem::GenerateStem()
 		
 		// Update the current position and apply a random rotation
 		LastRingVertices = EndRingVertices;
-		CurrentPosition = NextPosition + (CurrentDirection * SegmentGapLength);
+		//CurrentPosition = NextPosition + (CurrentDirection * SegmentGapLength);
 
 		// Apply random tilt
 		// probability check to determine growth behavior
@@ -202,6 +215,8 @@ void AProceduralStem::GenerateStem()
 
 		// combine the bias direction and randomness
 		CurrentDirection = TiltQuat.RotateVector(BiasDirection).GetSafeNormal();
+
+		CurrentPosition = NextPosition + (CurrentDirection * SegmentGapLength);
 
 		// update right and up vectors
 		RightVector = FVector::CrossProduct(UpVector, CurrentDirection).GetSafeNormal();
