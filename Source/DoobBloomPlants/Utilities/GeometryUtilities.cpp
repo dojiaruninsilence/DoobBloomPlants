@@ -35,4 +35,17 @@ namespace GeometryUtilities {
 		Vertices.Append(RingB);
 		BaseIndex += RingA.Num() + RingB.Num();
 	}
+
+	void ConnectRingArray(const TArray<TArray<FVector>>& Rings, TArray<FVector>& Vertices, TArray<int32>& Triangles, int32& BaseIndex) {
+		if (Rings.Num() < 2) return;
+
+		// iterate through the array of rings and connect consecutive rings
+		for (int32 i = 0; i < Rings.Num() - 1; ++i) {
+			const TArray<FVector>& CurrentRing = Rings[i];
+			const TArray<FVector>& NextRing = Rings[i + 1];
+
+			ConnectRings(CurrentRing, NextRing, Vertices, Triangles, BaseIndex);
+		}
+		
+	}
 }

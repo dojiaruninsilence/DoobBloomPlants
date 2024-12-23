@@ -6,6 +6,7 @@
 
 #include "GeometryUtilities.h"
 #include "MathUtililities.h"
+#include "DoobMeshUtils.h"
 
 // Sets default values
 AProceduralStem::AProceduralStem()
@@ -87,6 +88,8 @@ AProceduralStemNode* AProceduralStem::GetEndNode()
 // Generate the full stem
 void AProceduralStem::GenerateStem()
 {
+	TArray<TArray<FVector>> Rings;
+
 	TArray<FVector> Vertices;
 	TArray<int32> Triangles;
 
@@ -102,13 +105,7 @@ void AProceduralStem::GenerateStem()
 	FVector RightVector = FVector(1, 0, 0);
 	FVector UpVector = StartUpVector;
 
-	//FVector PerpVector = MathUtilities::GenerateRandomPerpendicularVector(TargetPoint);
-
 	TArray<FVector> LastRingVertices;
-
-	// store the start position and direction
-	//StartPosition = CurrentPosition;
-	//StartDirection = CurrentDirection;
 
 	for (int32 i = 0; i < NumSegments; ++i)
 	{
@@ -134,6 +131,7 @@ void AProceduralStem::GenerateStem()
 			FVector BendDirection = (CurrentDirection + LastDirection).GetSafeNormal();
 			float BendRadius = CurrentRadius + (CurrentRadius * 0.05f);
 			GeometryUtilities::GenerateRing(BendPosition, BendDirection, UpVector, BendRadius, StemNumSides, BendRingVertices);
+			Rings.Add(BendRingVertices);
 		}
 
 		LastDirection = CurrentDirection;
@@ -150,20 +148,22 @@ void AProceduralStem::GenerateStem()
 		// Generate the ring at the start of this segment
 		TArray<FVector> StartRingVertices;
 		GeometryUtilities::GenerateRing(CurrentPosition, CurrentDirection, UpVector, CurrentRadius, StemNumSides, StartRingVertices);
+		Rings.Add(StartRingVertices);
 
 		// Generate the ring at the end of this segment
 		TArray<FVector> EndRingVertices;
 		GeometryUtilities::GenerateRing(NextPosition, CurrentDirection, UpVector, CurrentRadius, StemNumSides, EndRingVertices);
+		Rings.Add(EndRingVertices);
 
 		// connect the rings with triangles
 		if (i > 0) // skip connecting for the first segment
 		{
-			GeometryUtilities::ConnectRings(LastRingVertices, BendRingVertices, Vertices, Triangles, BaseIndex);
-			GeometryUtilities::ConnectRings(BendRingVertices, StartRingVertices, Vertices, Triangles, BaseIndex);
+			//GeometryUtilities::ConnectRings(LastRingVertices, BendRingVertices, Vertices, Triangles, BaseIndex);
+			//GeometryUtilities::ConnectRings(BendRingVertices, StartRingVertices, Vertices, Triangles, BaseIndex);
 		}
 
 		// Generate the cylinder for this segment
-		GeometryUtilities::ConnectRings(StartRingVertices, EndRingVertices, Vertices, Triangles, BaseIndex);
+		//GeometryUtilities::ConnectRings(StartRingVertices, EndRingVertices, Vertices, Triangles, BaseIndex);
 		
 		// Update the current position and apply a random rotation
 		LastRingVertices = EndRingVertices;
@@ -228,8 +228,17 @@ void AProceduralStem::GenerateStem()
 	// store the end position and direction
 	EndPosition = NextPosition;
 
+	
+
+	// smooth vertices
+	DoobMeshUtils::SmoothMeshVertices(Vertices, Triangles, 1);
+
+	GeometryUtilities::ConnectRingArray(Rings, Vertices, Triangles, BaseIndex);
+
 	TArray<FVector> Normals;
 	Normals.Init(FVector::UpVector, Vertices.Num());
+
+	DoobMeshUtils::RemoveDegenerateTriangles(Vertices, Triangles);
 
 	TArray<FVector2d> UV0;
 	for (const FVector& Vertex : Vertices)

@@ -6,6 +6,7 @@
 
 #include "GeometryUtilities.h"
 #include "MathUtililities.h"
+#include "DoobMeshUtils.h"
 
 // Sets default values
 AProceduralStemNode::AProceduralStemNode()
@@ -71,7 +72,7 @@ void AProceduralStemNode::GenerateNode()
 		return;
 	}
 
-
+	TArray<TArray<FVector>> Rings;
 
 	TArray<FVector> Vertices;
 	TArray<int32> Triangles;
@@ -105,12 +106,13 @@ void AProceduralStemNode::GenerateNode()
 		// generate the ring at this position
 		TArray<FVector> CurrentRingVertices;
 		GeometryUtilities::GenerateRing(CurrentPosition, CurrentDirection, UpVector, CurrentRadius, StemNodeNumSides, CurrentRingVertices);
+		Rings.Add(CurrentRingVertices);
 
 		// Connect the Previous ring to the current ring
-		if (i > 0)
+		/*if (i > 0)
 		{
 			GeometryUtilities::ConnectRings(LastRingVertices, CurrentRingVertices, Vertices, Triangles, BaseIndex);
-		}
+		}*/
 
 		// update variables for the next iteration
 		LastRingVertices = CurrentRingVertices;
@@ -134,18 +136,25 @@ void AProceduralStemNode::GenerateNode()
 
 	}
 
-	if (Vertices.Num() == 0 || Triangles.Num() == 0)
-	{
-		return;
-	}
-
 	EndUpVector = UpVector;
 	EndPosition = CurrentPosition;
 	EndDirection = CurrentDirection;
 
 	// Finalize the mesh
+
+	DoobMeshUtils::SmoothMeshVertices(Vertices, Triangles, 1);
+
+	GeometryUtilities::ConnectRingArray(Rings, Vertices, Triangles, BaseIndex);
+
+	if (Vertices.Num() == 0 || Triangles.Num() == 0)
+	{
+		return;
+	}
+
 	TArray<FVector> Normals;
 	Normals.Init(FVector::UpVector, Vertices.Num());
+
+	DoobMeshUtils::RemoveDegenerateTriangles(Vertices, Triangles);
 
 	TArray<FVector2d> UV0;
 	for (const FVector& Vertex : Vertices)
