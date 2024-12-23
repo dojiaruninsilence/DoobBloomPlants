@@ -4,8 +4,8 @@
 #include "ProceduralStemNode.h"
 #include "ProceduralStem.h"
 
-#include "GeometryUtilities.h"
-#include "MathUtililities.h"
+#include "DoobGeometryUtils.h"
+#include "DoobMathUtils.h"
 #include "DoobMeshUtils.h"
 
 // Sets default values
@@ -105,7 +105,7 @@ void AProceduralStemNode::GenerateNode()
 
 		// generate the ring at this position
 		TArray<FVector> CurrentRingVertices;
-		GeometryUtilities::GenerateRing(CurrentPosition, CurrentDirection, UpVector, CurrentRadius, StemNodeNumSides, CurrentRingVertices);
+		DoobGeometryUtils::GenerateRing(CurrentPosition, CurrentDirection, UpVector, CurrentRadius, StemNodeNumSides, CurrentRingVertices);
 		Rings.Add(CurrentRingVertices);
 
 		// Connect the Previous ring to the current ring
@@ -121,14 +121,14 @@ void AProceduralStemNode::GenerateNode()
 		int32 steps = NodeSegments / 2;
 		if (i <= steps)
 		{			
-			NextRadius = MathUtilities::FloatChangeWithCurve(StartRadius, RadiusModified, CurrentRadius, steps, i, curveType);
-			CurrentSegmentLength = MathUtilities::FloatChangeWithCurve(StartSegmentLength, EndSegmentLength, CurrentSegmentLength, steps, i, curveType);
+			NextRadius = DoobMathUtils::FloatChangeWithCurve(StartRadius, RadiusModified, CurrentRadius, steps, i, curveType);
+			CurrentSegmentLength = DoobMathUtils::FloatChangeWithCurve(StartSegmentLength, EndSegmentLength, CurrentSegmentLength, steps, i, curveType);
 		}
 		else
 		{
 			int32 step = i - steps;
-			NextRadius = MathUtilities::FloatChangeWithCurve(RadiusModified, EndRadius, CurrentRadius, steps, step, curveType+1);
-			CurrentSegmentLength = MathUtilities::FloatChangeWithCurve(EndSegmentLength, StartSegmentLength, CurrentSegmentLength, steps, step, curveType + 1);
+			NextRadius = DoobMathUtils::FloatChangeWithCurve(RadiusModified, EndRadius, CurrentRadius, steps, step, curveType+1);
+			CurrentSegmentLength = DoobMathUtils::FloatChangeWithCurve(EndSegmentLength, StartSegmentLength, CurrentSegmentLength, steps, step, curveType + 1);
 		}
 
 		// calc the position for this ring
@@ -144,7 +144,7 @@ void AProceduralStemNode::GenerateNode()
 
 	DoobMeshUtils::SmoothMeshVertices(Vertices, Triangles, 1);
 
-	GeometryUtilities::ConnectRingArray(Rings, Vertices, Triangles, BaseIndex);
+	DoobGeometryUtils::ConnectRingArray(Rings, Vertices, Triangles, BaseIndex);
 
 	if (Vertices.Num() == 0 || Triangles.Num() == 0)
 	{

@@ -4,8 +4,8 @@
 #include "ProceduralStem.h"
 #include "ProceduralStemNode.h"
 
-#include "GeometryUtilities.h"
-#include "MathUtililities.h"
+#include "DoobGeometryUtils.h"
+#include "DoobMathUtils.h"
 #include "DoobMeshUtils.h"
 
 // Sets default values
@@ -130,7 +130,7 @@ void AProceduralStem::GenerateStem()
 			FVector BendPosition = (CurrentPosition + NextPosition) * 0.5f;
 			FVector BendDirection = (CurrentDirection + LastDirection).GetSafeNormal();
 			float BendRadius = CurrentRadius + (CurrentRadius * 0.05f);
-			GeometryUtilities::GenerateRing(BendPosition, BendDirection, UpVector, BendRadius, StemNumSides, BendRingVertices);
+			DoobGeometryUtils::GenerateRing(BendPosition, BendDirection, UpVector, BendRadius, StemNumSides, BendRingVertices);
 			Rings.Add(BendRingVertices);
 		}
 
@@ -147,12 +147,12 @@ void AProceduralStem::GenerateStem()
 
 		// Generate the ring at the start of this segment
 		TArray<FVector> StartRingVertices;
-		GeometryUtilities::GenerateRing(CurrentPosition, CurrentDirection, UpVector, CurrentRadius, StemNumSides, StartRingVertices);
+		DoobGeometryUtils::GenerateRing(CurrentPosition, CurrentDirection, UpVector, CurrentRadius, StemNumSides, StartRingVertices);
 		Rings.Add(StartRingVertices);
 
 		// Generate the ring at the end of this segment
 		TArray<FVector> EndRingVertices;
-		GeometryUtilities::GenerateRing(NextPosition, CurrentDirection, UpVector, CurrentRadius, StemNumSides, EndRingVertices);
+		DoobGeometryUtils::GenerateRing(NextPosition, CurrentDirection, UpVector, CurrentRadius, StemNumSides, EndRingVertices);
 		Rings.Add(EndRingVertices);
 
 		// connect the rings with triangles
@@ -233,7 +233,7 @@ void AProceduralStem::GenerateStem()
 	// smooth vertices
 	DoobMeshUtils::SmoothMeshVertices(Vertices, Triangles, 1);
 
-	GeometryUtilities::ConnectRingArray(Rings, Vertices, Triangles, BaseIndex);
+	DoobGeometryUtils::ConnectRingArray(Rings, Vertices, Triangles, BaseIndex);
 
 	TArray<FVector> Normals;
 	Normals.Init(FVector::UpVector, Vertices.Num());

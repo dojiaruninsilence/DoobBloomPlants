@@ -1,9 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "MathUtililities.h"
+#include "DoobMathUtils.h"
 
-namespace MathUtilities {
+namespace DoobMathUtils {
 	FVector GenerateRandomPerpendicularVector(const FVector& BaseVector)
 	{
 		// ensure non zero length
@@ -104,3 +104,4 @@ namespace MathUtilities {
 		EndValue = StartBound + ((SegmentIndex + 1) / (float)NumSegments) * (EndBound - StartBound);
 	}
 }
+

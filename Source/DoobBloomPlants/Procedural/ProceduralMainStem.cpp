@@ -5,7 +5,7 @@
 #include "ProceduralStem.h"
 #include "ProceduralStemNode.h"
 
-#include "MathUtililities.h"
+#include "DoobMathUtils.h"
 
 // Sets default values
 AProceduralMainStem::AProceduralMainStem()
@@ -27,7 +27,7 @@ void AProceduralMainStem::BeginPlay()
 {
 	Super::BeginPlay();
 
-	GenerateMainStemChain();
+	//GenerateMainStemChain();
 	
 }
 
@@ -86,14 +86,14 @@ void AProceduralMainStem::GenerateMainStemChain() {
 	FVector CurrentPosition = FVector::ZeroVector;
 	FVector CurrentDirection = FVector(0, 0, 1);
 	FVector UpVector = FVector(0, 1, 0);
-	PerpVector = MathUtilities::GenerateRandomPerpendicularVector(TargetPoint);
+	PerpVector = DoobMathUtils::GenerateRandomPerpendicularVector(TargetPoint);
 
 	float CurrentBaseRadius = 0.0f;
 	float CurrentTopRadius = 0.0f;
 
 	// generate stems and nodes
 	for (int32 i = 0; i < NumStems; ++i) {
-		MathUtilities::InterpolateBetweenBounds(BaseRadius, TopRadius, NumStems, i, CurrentBaseRadius, CurrentTopRadius);
+		DoobMathUtils::InterpolateBetweenBounds(BaseRadius, TopRadius, NumStems, i, CurrentBaseRadius, CurrentTopRadius);
 
 		// spawn and config a new stem
 		AProceduralStem* NewStem = GetWorld()->SpawnActor<AProceduralStem>(AProceduralStem::StaticClass());
@@ -150,6 +150,8 @@ void AProceduralMainStem::GenerateMainStemChain() {
 			NewNode->EndRadius = CurrentTopRadius;
 
 			NewNode->GenerateNode();
+
+			Nodes.Add(NewNode);
 
 			// update
 			CurrentPosition = NewNode->GetEndPosition();

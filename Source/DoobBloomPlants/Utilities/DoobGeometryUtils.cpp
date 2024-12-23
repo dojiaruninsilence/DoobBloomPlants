@@ -1,6 +1,6 @@
-#include "GeometryUtilities.h"
+#include "DoobGeometryUtils.h"
 
-namespace GeometryUtilities {
+namespace DoobGeometryUtils {
 	void GenerateRing(FVector Center, FVector Direction, FVector UpVector, float Radius, int32 NumSides, TArray<FVector>& RingVertices) {
 		const float AngleStep = 360.0f / NumSides;
 		FVector Right = FVector::CrossProduct(Direction, UpVector).GetSafeNormal();
@@ -46,6 +46,6 @@ namespace GeometryUtilities {
 
 			ConnectRings(CurrentRing, NextRing, Vertices, Triangles, BaseIndex);
 		}
-		
+
 	}
 }

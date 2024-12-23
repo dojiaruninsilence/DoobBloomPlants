@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 
-namespace MathUtilities {
+namespace DoobMathUtils {
 	FVector GenerateRandomPerpendicularVector(const FVector& BaseVector);
 
 	float EaseOutIncrement(int32 TotalSteps, int32 CurrentStep);
