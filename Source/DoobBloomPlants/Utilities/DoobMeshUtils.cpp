@@ -95,4 +95,35 @@ namespace DoobMeshUtils {
 			}
 		}
 	}
+
+	void GenerateTubeMesh(
+		const TArray<FVector>& TubeVertices,
+		int32 ProfileSegments,
+		TArray<int32>& OutTriangles
+	) {
+		int32 NumProfiles = TubeVertices.Num() / ProfileSegments;
+
+		for (int32 i = 0; i < NumProfiles - 1; ++i) {
+			for (int32 j = 0; j < ProfileSegments; ++j) {
+				int32 Current = i * ProfileSegments + j;
+				int32 Next = Current + ProfileSegments;
+
+				//int32 NextInProfile = (j + 1) % ProfileSegments;
+
+				// Vertex in the same profile but next in sequence
+				int32 NextInProfile = i * ProfileSegments + (j + 1) % ProfileSegments;
+				// Vertex below the next one in the next profile
+				int32 NextInNextProfile = Next + (j + 1) % ProfileSegments;
+
+				// Create two triangles forming a quad
+				OutTriangles.Add(Current);
+				OutTriangles.Add(Next);
+				OutTriangles.Add(NextInProfile);
+
+				OutTriangles.Add(NextInProfile);
+				OutTriangles.Add(Next);
+				OutTriangles.Add(NextInNextProfile);
+			}
+		}
+	}
 }

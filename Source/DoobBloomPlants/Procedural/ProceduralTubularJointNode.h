@@ -4,6 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "ProceduralMeshComponent.h"
+
+#include "DoobProfileUtils.h"
+#include "DoobGeometryUtils.h"
+#include "DoobMeshUtils.h"
+
 #include "ProceduralTubularJointNode.generated.h"
 
 UCLASS()
@@ -23,4 +29,33 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	// function to build and render the main tube
+	void BuildMainTube();
+
+	// Start positioning
+	UPROPERTY(BlueprintReadWrite, Category = "Stem Node")
+	FVector StartPosition = FVector::ZeroVector;
+
+private:
+	UPROPERTY(VisibleAnywhere)
+	UProceduralMeshComponent* TubularJointNodeMesh;
+
+	//UPROPERTY(EditAnywhere)
+	DoobProfileUtils::F2DProfile MainTubeProfile;
+
+	UPROPERTY(EditAnywhere)
+	FTransform MainTubeTransform;
+
+	UPROPERTY(EditAnywhere)
+	int32 MainTubeSegments;
+
+	UPROPERTY(EditAnywhere)
+	float MainTubeRadius;
+
+	UPROPERTY(EditAnywhere)
+	bool bIsMainTubeClosed;
+
+	//void CreateProceduralMesh();
+
+	FVector EndPosition;
 };
