@@ -7,16 +7,43 @@
 //#include "DoobProfileUtils.h"
 
 namespace DoobGeometryUtils {
-	void GenerateRing(FVector Center, FVector Direction, FVector UpVector, float Radius, int32 NumSides, TArray<FVector>& RingVertices) {
+	void GenerateRing(FVector Center, FVector Direction, FVector UpVector, float Radius, int32 NumSides, FRingData& RingData) {
+
+		// <------------------------------------- Need to figure out if this is necassary and if so why it ruins geometry ----------------------------------------------> //
+		// Ensure the UpVector is not parallel to the Direction to avoid degenerate cross-product results
+		//FVector SafeUpVector = FMath::IsNearlyZero(Direction | UpVector) ? FVector::UpVector : UpVector;
+		// <----------------Temp Remove all this logic if above cant be fixed ------------------------> // 
+		FVector SafeUpVector = UpVector;
+
 		const float AngleStep = 360.0f / NumSides;
-		FVector Right = FVector::CrossProduct(Direction, UpVector).GetSafeNormal();
+		FVector Right = FVector::CrossProduct(Direction, SafeUpVector).GetSafeNormal();
 		FVector Forward = FVector::CrossProduct(Right, Direction).GetSafeNormal();
+
+		FVector FirstVertex;
 
 		for (int i = 0; i <= NumSides; ++i) {
 			float Angle = FMath::DegreesToRadians(i * AngleStep);
 			FVector Offset = (FMath::Cos(Angle) * Right + FMath::Sin(Angle) * Forward) * Radius;
-			RingVertices.Add(Center + Offset);
+
+			FVector Vertex = Center + Offset;
+
+			if (i == 0) {
+				FirstVertex = Vertex; // Store the first vertex
+			}
+
+			RingData.Vertices.Add(Vertex);
 		}
+
+		// close the ring by adding the first vertex again
+		RingData.Vertices.Add(FirstVertex);
+
+		// calc the normal of the ring using right and forward vectors
+		RingData.Normal = FVector::CrossProduct(Right, Forward).GetSafeNormal();
+
+		RingData.Center = Center;
+		RingData.Direction = Direction;
+		RingData.Radius = Radius;
+		RingData.UpVector = UpVector;
 	}
 
 	void ConnectRings(const TArray<FVector>& RingA, const TArray<FVector>& RingB, TArray<FVector>& Vertices, TArray<int32>& Triangles, int32& BaseIndex) {
@@ -42,13 +69,13 @@ namespace DoobGeometryUtils {
 		BaseIndex += RingA.Num() + RingB.Num();
 	}
 
-	void ConnectRingArray(const TArray<TArray<FVector>>& Rings, TArray<FVector>& Vertices, TArray<int32>& Triangles, int32& BaseIndex) {
+	void ConnectRingArray(const TArray<FRingData>& Rings, TArray<FVector>& Vertices, TArray<int32>& Triangles, int32& BaseIndex) {
 		if (Rings.Num() < 2) return;
 
 		// iterate through the array of rings and connect consecutive rings
 		for (int32 i = 0; i < Rings.Num() - 1; ++i) {
-			const TArray<FVector>& CurrentRing = Rings[i];
-			const TArray<FVector>& NextRing = Rings[i + 1];
+			const TArray<FVector>& CurrentRing = Rings[i].Vertices;
+			const TArray<FVector>& NextRing = Rings[i + 1].Vertices;
 
 			ConnectRings(CurrentRing, NextRing, Vertices, Triangles, BaseIndex);
 		}
@@ -98,16 +125,15 @@ namespace DoobGeometryUtils {
 	void ConstructTubeFromProfile(
 		const DoobProfileUtils::F2DProfile& Profile,
 		const FVector& StartPosition,
-		const FVector& EndPosition,
 		const FVector& Direction,
 		const FVector& UpVector,
 		int32 NumSegments,
 		int32 NumSides,
-		float Height,
-		TArray<TArray<FVector>>& OutRingVerticesArrays,
+		float Length,
+		FTubeData& OutTube,
 		bool ApplyBothAxis
 	) {
-		OutRingVerticesArrays.Empty();
+		OutTube.Rings.Empty();
 
 		FVector CurrentPosition = StartPosition;
 
@@ -118,6 +144,7 @@ namespace DoobGeometryUtils {
 		float SegmentLengthMax = 0.0f;
 		bool MissingSegmentPassed = false;
 
+		// if true apply the curve to both axis
 		if (ApplyBothAxis) {
 			SegmentLengthCurveTotal = DoobProfileUtils::SumYValuesInProfile(Profile);
 			SegmentLengthMax = DoobProfileUtils::MaxYValueInProfile(Profile);
@@ -129,6 +156,7 @@ namespace DoobGeometryUtils {
 
 			float segmentLength = 0.0f;
 
+			// if true apply the curve to both axis
 			if (ApplyBothAxis) {
 				float segPercent = Profile.Points[i].Y / SegmentLengthCurveTotal;
 
@@ -140,26 +168,31 @@ namespace DoobGeometryUtils {
 					MissingSegmentPassed = true;
 				}
 
-				segmentLength = segPercent * Height;
+				segmentLength = segPercent * Length;
 
 				CurrentPosition = CurrentPosition + segmentLength * NormalizedDirection;
 
 				UE_LOG(LogTemp, Log, TEXT("iteration: %d, segPercent: %f, segmentLength: %f"), i, segPercent, segmentLength);
 			}
 			else {
-				segmentLength = t * Height;
+				segmentLength = t * Length;
 				CurrentPosition = StartPosition + segmentLength * NormalizedDirection;
 			}
 
-			// Calculate the position along the height
-			//CurrentPosition = StartPosition + segmentLength * NormalizedDirection;
-
 			// Generate a ring at this position
-			TArray<FVector> RingVertices;
-			DoobGeometryUtils::GenerateRing(CurrentPosition, NormalizedDirection, UpVector, Profile.Points[i].Y, NumSides, RingVertices);
+			DoobGeometryUtils::FRingData RingData;
+			DoobGeometryUtils::GenerateRing(CurrentPosition, NormalizedDirection, UpVector, Profile.Points[i].Y, NumSides, RingData);
 
 			// Store the ring vertices in the output array
-			OutRingVerticesArrays.Add(RingVertices);
-		}		
+			OutTube.Rings.Add(RingData);
+		}
+
+		OutTube.Direction = Direction;
+		OutTube.EndPosition = CurrentPosition;
+		OutTube.Length = Length;
+		OutTube.NumSegments = NumSegments;
+		OutTube.NumSides = NumSides;
+		OutTube.Profile = Profile;
+		OutTube.StartPosition = StartPosition;
 	}
 }

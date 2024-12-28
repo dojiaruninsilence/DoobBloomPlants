@@ -44,7 +44,7 @@ namespace DoobProfileUtils {
 		for (int32 i = 0; i < NumSegments; ++i) {
 			float t = static_cast<float>(i) / (NumSegments - 1);
 			float X = t;
-			float Y = Slope * X + StartHeight;
+			float Y = FMath::Lerp(StartHeight, EndHeight, t);
 			Points.Add(FVector2D(X, Y));
 		}
 

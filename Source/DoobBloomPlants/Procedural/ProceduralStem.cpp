@@ -88,7 +88,7 @@ AProceduralStemNode* AProceduralStem::GetEndNode()
 // Generate the full stem
 void AProceduralStem::GenerateStem()
 {
-	TArray<TArray<FVector>> Rings;
+	TArray<DoobGeometryUtils::FRingData> Rings;
 
 	TArray<FVector> Vertices;
 	TArray<int32> Triangles;
@@ -105,7 +105,7 @@ void AProceduralStem::GenerateStem()
 	FVector RightVector = FVector(1, 0, 0);
 	FVector UpVector = StartUpVector;
 
-	TArray<FVector> LastRingVertices;
+	DoobGeometryUtils::FRingData LastRingVertices;
 
 	for (int32 i = 0; i < NumSegments; ++i)
 	{
@@ -125,7 +125,7 @@ void AProceduralStem::GenerateStem()
 		}
 
 		// generate joint ring
-		TArray<FVector> BendRingVertices;
+		DoobGeometryUtils::FRingData BendRingVertices;
 		if (i > 0) {
 			FVector BendPosition = (CurrentPosition + NextPosition) * 0.5f;
 			FVector BendDirection = (CurrentDirection + LastDirection).GetSafeNormal();
@@ -146,12 +146,12 @@ void AProceduralStem::GenerateStem()
 		EndUpVector = UpVector;
 
 		// Generate the ring at the start of this segment
-		TArray<FVector> StartRingVertices;
+		DoobGeometryUtils::FRingData StartRingVertices;
 		DoobGeometryUtils::GenerateRing(CurrentPosition, CurrentDirection, UpVector, CurrentRadius, StemNumSides, StartRingVertices);
 		Rings.Add(StartRingVertices);
 
 		// Generate the ring at the end of this segment
-		TArray<FVector> EndRingVertices;
+		DoobGeometryUtils::FRingData EndRingVertices;
 		DoobGeometryUtils::GenerateRing(NextPosition, CurrentDirection, UpVector, CurrentRadius, StemNumSides, EndRingVertices);
 		Rings.Add(EndRingVertices);
 

@@ -18,10 +18,10 @@ AProceduralTubularJointNode::AProceduralTubularJointNode()
 	MainTubeRadius = 50.0f;
 	bIsMainTubeClosed = true;
 
-	MainTubeProfile = DoobProfileUtils::GenerateEggShapedCylinderProfile(MainTubeSegments, 0.0f, 300.0f, 0.0f, 0.35f);
+	//MainTubeProfile = DoobProfileUtils::GenerateEggShapedCylinderProfile(MainTubeSegments, 0.0f, 300.0f, 0.0f, 0.35f);
 
 	// Generate a default circular profile
-	//MainTubeProfile = DoobProfileUtils::GenerateRegularCylinderProfile(MainTubeSegments, MainTubeRadius);
+	MainTubeProfile = DoobProfileUtils::GenerateLinearProfile(MainTubeSegments, 200.0f, 100.0f);
 	MainTubeTransform = FTransform::Identity;
 }
 
@@ -40,7 +40,7 @@ void AProceduralTubularJointNode::Tick(float DeltaTime)
 }
 
 void AProceduralTubularJointNode::BuildMainTube() {
-	TArray<TArray<FVector>> Rings;
+	DoobGeometryUtils::FTubeData TubeData;
 
 	TArray<FVector> TubeVertices;
 
@@ -49,9 +49,9 @@ void AProceduralTubularJointNode::BuildMainTube() {
 	int32 BaseIndex = 0;
 
 
-	DoobGeometryUtils::ConstructTubeFromProfile(MainTubeProfile, StartPosition, EndPosition, FVector(0, 0, 1), FVector(0, 1, 0), MainTubeProfile.Points.Num(), 10, 700.0f, Rings);
+	DoobGeometryUtils::ConstructTubeFromProfile(MainTubeProfile, StartPosition, FVector(0, 0, 1), FVector(0, 1, 0), MainTubeProfile.Points.Num(), 10, 700.0f, TubeData, true);
 
-	DoobGeometryUtils::ConnectRingArray(Rings, TubeVertices, TubeTriangles, BaseIndex);
+	DoobGeometryUtils::ConnectRingArray(TubeData.Rings, TubeVertices, TubeTriangles, BaseIndex);
 
 	TArray<FVector> Normals;
 	Normals.Init(FVector::UpVector, TubeVertices.Num());

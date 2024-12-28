@@ -72,7 +72,7 @@ void AProceduralStemNode::GenerateNode()
 		return;
 	}
 
-	TArray<TArray<FVector>> Rings;
+	TArray<DoobGeometryUtils::FRingData> Rings;
 
 	TArray<FVector> Vertices;
 	TArray<int32> Triangles;
@@ -87,7 +87,7 @@ void AProceduralStemNode::GenerateNode()
 	FVector RightVector = FVector(1, 0, 0);
 	FVector UpVector = StartUpVector;
 
-	TArray<FVector> LastRingVertices;
+	DoobGeometryUtils::FRingData LastRingVertices;
 
 	float CurrentRadius = StartRadius;
 	float NextRadius = StartRadius;
@@ -104,15 +104,9 @@ void AProceduralStemNode::GenerateNode()
 		CurrentPosition = NextPosition;
 
 		// generate the ring at this position
-		TArray<FVector> CurrentRingVertices;
+		DoobGeometryUtils::FRingData CurrentRingVertices;
 		DoobGeometryUtils::GenerateRing(CurrentPosition, CurrentDirection, UpVector, CurrentRadius, StemNodeNumSides, CurrentRingVertices);
 		Rings.Add(CurrentRingVertices);
-
-		// Connect the Previous ring to the current ring
-		/*if (i > 0)
-		{
-			GeometryUtilities::ConnectRings(LastRingVertices, CurrentRingVertices, Vertices, Triangles, BaseIndex);
-		}*/
 
 		// update variables for the next iteration
 		LastRingVertices = CurrentRingVertices;
