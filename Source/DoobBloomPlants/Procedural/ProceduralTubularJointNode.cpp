@@ -14,7 +14,7 @@ AProceduralTubularJointNode::AProceduralTubularJointNode()
 	RootComponent = TubularJointNodeMesh;
 
 	// intialize properties
-	MainTubeSegments = 32;
+	MainTubeSegments = 2;
 	MainTubeRadius = 50.0f;
 	bIsMainTubeClosed = true;
 

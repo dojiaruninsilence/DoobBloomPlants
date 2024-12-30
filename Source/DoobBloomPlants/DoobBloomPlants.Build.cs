@@ -9,7 +9,7 @@ public class DoobBloomPlants : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "ProceduralMeshComponent" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "ProceduralMeshComponent", "AutomationController" });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 
@@ -17,7 +17,8 @@ public class DoobBloomPlants : ModuleRules
         PublicIncludePaths.AddRange(new string[]
         {
             Path.Combine(ModuleDirectory, "Procedural"),
-            Path.Combine(ModuleDirectory, "Utilities")
+            Path.Combine(ModuleDirectory, "Utilities"),
+            Path.Combine(ModuleDirectory, "Tests")
         });
 
         // Uncomment if you are using Slate UI

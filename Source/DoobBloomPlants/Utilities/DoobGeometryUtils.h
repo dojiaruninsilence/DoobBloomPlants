@@ -4,10 +4,9 @@
 
 #include "DoobProfileUtils.h"
 
-//namespace DoobProfileUtils {
-//    struct F2DProfile;
-//}
 namespace DoobGeometryUtils {
+
+    // ------------------------------------------------------ Ring and Tube ------------------------------------------------------------ // 
 
     struct FRingData {
         TArray<FVector> Vertices;
@@ -39,6 +38,57 @@ namespace DoobGeometryUtils {
 	void ConnectRings(const TArray<FVector>& RingA, const TArray<FVector>& RingB, TArray<FVector>& Vertices, TArray<int32>& Triangles, int32& BaseIndex);
 	void ConnectRingArray(const TArray<FRingData>& Rings, TArray<FVector>& Vertices, TArray<int32>& Triangles, int32& BaseIndex);
 
+
+    // construct the vertices for a cylindrical tube using a 2d profile 
+    void ConstructTubeFromProfile(
+        const DoobProfileUtils::F2DProfile& Profile,
+        const FVector& StartPosition,
+        const FVector& Direction,
+        const FVector& UpVector,
+        int32 NumSegments,
+        int32 NumSides,
+        float Length,
+        FTubeData& OutTube,
+        bool ApplyBothAxis
+    );
+
+    // ------------------------------------------------------ Planes and Lines Intersections ------------------------------------------------------------ //
+
+    // contain plane equations
+    struct FPlaneEquation {
+        FVector Normal;
+        float D;
+
+        FPlaneEquation();
+        FPlaneEquation(const FVector& InNormal, float InD);
+
+        // possibly add methods for point containment or intersection checks here
+    };
+
+    // function to calculate plane equation from two rings
+    FPlaneEquation CalculatePlaneFromRings(const FRingData& RingA, const FRingData& RingB);
+
+    // calculate a ray intersection with a plane
+    bool CalculateIntersectionWithPlane(
+        const FPlaneEquation& Plane,
+        const FVector& RayOrigin,
+        const FVector& RayDirection,
+        FVector& OutIntersectionPoint
+    );
+
+    bool PointInsideCircle(const FVector& Point, const FVector& Center, float Radius);
+
+    void FilterPlanesAndLines(
+        const FTubeData& TubeA,
+        const FTubeData& TubeB,
+        TArray<int32>& OutPlaneIndicesA,
+        TArray<int32>& OutPlaneIndicesB,
+        TArray<int32>& OutLineIndicesA,
+        TArray<int32>& OutLineIndicesB
+    );
+
+    // ------------------------------------------------------ Shape Intersections ------------------------------------------------------------ //
+
     /**
      * Generates the intersection curve of two cylindrical shapes based on their 2D profiles and transformations.
      *
@@ -59,18 +109,5 @@ namespace DoobGeometryUtils {
         int32 MainSegments,
         int32 LateralSegments,
         float Threshold
-    );
-
-    // construct the vertices for a cylindrical tube using a 2d profile
-    void ConstructTubeFromProfile(
-        const DoobProfileUtils::F2DProfile& Profile,
-        const FVector& StartPosition,
-        const FVector& Direction,
-        const FVector& UpVector,
-        int32 NumSegments,
-        int32 NumSides,
-        float Length,
-        FTubeData& OutTube,
-        bool ApplyBothAxis
     );
 }
