@@ -4,42 +4,91 @@
 
 #include "DoobProfileUtils.h"
 
+/**
+ * @namespace DoobGeometryUtils
+ * Contains utility functions and data structures for geometric operations.
+ */
 namespace DoobGeometryUtils {
 
     // ------------------------------------------------------ Ring and Tube ------------------------------------------------------------ // 
 
+    /**
+     * @struct FRingData
+     * Stores data related to a ring in 3D space, including vertices, normal, and other properties.
+     */
     struct FRingData {
-        TArray<FVector> Vertices;
-        FVector Normal;
-        FVector Center;
-        FVector Direction;
-        FVector UpVector;
-        float Radius;
-        bool bIsClosed = true;
-        int32 NumVertices = Vertices.Num();
-        FName RingID;
+        TArray<FVector> Vertices; ///< The vertices forming the ring.
+        FVector Normal; ///< Normal vector of the ring.
+        FVector Center; ///< Center position of the ring.
+        FVector Direction; ///< Direction the ring is facing.
+        FVector UpVector; ///< Up vector for the ring.
+        float Radius; ///< Radius of the ring.
+        bool bIsClosed = true; ///< Whether the ring is closed.
+        int32 NumVertices = Vertices.Num(); ///< Number of vertices in the ring.
+        FName RingID; ///< Unique identifier for the ring.
     };
 
+    /**
+     * @struct FTubeData
+     * Stores data related to a tube constructed from rings and a 2D profile.
+     */
     struct FTubeData {
-        DoobProfileUtils::F2DProfile Profile;
-        TArray<FRingData> Rings;
-        FVector StartPosition;
-        FVector EndPosition;
-        FVector Direction;
-        FVector UpVector;
-        float Length;
-        int32 NumSegments;
-        int32 NumSides;
-        int32 NumRings = Rings.Num();
-        FName TubeID;
+        DoobProfileUtils::F2DProfile Profile;  ///< 2D profile defining the tube's cross-section.
+        TArray<FRingData> Rings; ///< Array of rings forming the tube.
+        FVector StartPosition; ///< Starting position of the tube.
+        FVector EndPosition; ///< Ending position of the tube.
+        FVector Direction; ///< Direction the tube is facing.
+        FVector UpVector; ///< Up vector for the tube.
+        float Length; ///< Length of the tube.
+        int32 NumSegments; ///< Number of segments in the tube.
+        int32 NumSides; ///< Number of sides per segment.
+        int32 NumRings = Rings.Num(); ///< Number of rings forming the tube.
+        FName TubeID; ///< Unique identifier for the tube.
     };
 
+    /**
+     * Generates a ring of vertices around a center point.
+     * @param Center Center of the ring.
+     * @param Direction Direction the ring is facing.
+     * @param UpVector Up vector for orientation.
+     * @param Radius Radius of the ring.
+     * @param NumSides Number of sides (vertices) in the ring.
+     * @param RingData Output data structure to store the ring information.
+     */
 	void GenerateRing(FVector Center, FVector Direction, FVector UpVector, float Radius, int32 NumSides, FRingData& RingData);
+
+    /**
+     * Connects two rings of vertices to form triangles between them.
+     * @param RingA Vertices of the first ring.
+     * @param RingB Vertices of the second ring.
+     * @param Vertices Output array of all vertices.
+     * @param Triangles Output array of triangle indices.
+     * @param BaseIndex Starting index for the vertices.
+     */
 	void ConnectRings(const TArray<FVector>& RingA, const TArray<FVector>& RingB, TArray<FVector>& Vertices, TArray<int32>& Triangles, int32& BaseIndex);
+
+    /**
+     * Connects an array of rings into a continuous tube.
+     * @param Rings Array of ring data.
+     * @param Vertices Output array of all vertices.
+     * @param Triangles Output array of triangle indices.
+     * @param BaseIndex Starting index for the vertices.
+     */
 	void ConnectRingArray(const TArray<FRingData>& Rings, TArray<FVector>& Vertices, TArray<int32>& Triangles, int32& BaseIndex);
 
 
-    // construct the vertices for a cylindrical tube using a 2d profile 
+    /**
+     * Constructs a cylindrical tube from a 2D profile and input parameters.
+     * @param Profile 2D profile defining the cross-section.
+     * @param StartPosition Starting position of the tube.
+     * @param Direction Direction the tube is facing.
+     * @param UpVector Up vector for orientation.
+     * @param NumSegments Number of segments along the tube's length.
+     * @param NumSides Number of sides per segment.
+     * @param Length Length of the tube.
+     * @param OutTube Output data structure to store the tube information.
+     * @param ApplyBothAxis Whether to apply the profile curve to both axes.
+     */
     void ConstructTubeFromProfile(
         const DoobProfileUtils::F2DProfile& Profile,
         const FVector& StartPosition,
@@ -54,21 +103,44 @@ namespace DoobGeometryUtils {
 
     // ------------------------------------------------------ Planes and Lines Intersections ------------------------------------------------------------ //
 
-    // contain plane equations
+    /**
+     * Represents a plane equation defined by a normal vector and a scalar D.
+     */
     struct FPlaneEquation {
-        FVector Normal;
-        float D;
+        FVector Normal; ///< The normal vector of the plane.
+        float D; ///< The scalar D in the plane equation.
 
+        /**
+         * Default constructor. Initializes a zero plane.
+         */
         FPlaneEquation();
+
+        /**
+         * Constructs a plane from a normal vector and a scalar D.
+         * @param InNormal The normal vector of the plane.
+         * @param InD The scalar D in the plane equation.
+         */
         FPlaneEquation(const FVector& InNormal, float InD);
 
         // possibly add methods for point containment or intersection checks here
     };
 
-    // function to calculate plane equation from two rings
+    /**
+     * Calculates a plane equation using two rings.
+     * @param RingA The first ring.
+     * @param RingB The second ring.
+     * @return The calculated plane equation.
+     */
     FPlaneEquation CalculatePlaneFromRings(const FRingData& RingA, const FRingData& RingB);
 
-    // calculate a ray intersection with a plane
+    /**
+     * Calculates the intersection of a ray with a plane.
+     * @param Plane The plane equation.
+     * @param RayOrigin The origin of the ray.
+     * @param RayDirection The direction of the ray.
+     * @param OutIntersectionPoint The calculated intersection point, if any.
+     * @return True if the intersection is found; false otherwise.
+     */
     bool CalculateIntersectionWithPlane(
         const FPlaneEquation& Plane,
         const FVector& RayOrigin,
@@ -76,8 +148,24 @@ namespace DoobGeometryUtils {
         FVector& OutIntersectionPoint
     );
 
+    /**
+     * Checks if a point lies within or on the boundary of a circle.
+     * @param Point The point to check.
+     * @param Center The center of the circle.
+     * @param Radius The radius of the circle.
+     * @return True if the point is inside or on the circle; false otherwise.
+     */
     bool PointInsideCircle(const FVector& Point, const FVector& Center, float Radius);
 
+    /**
+     * Filters intersecting planes and lines between two tubes.
+     * @param TubeA The first tube.
+     * @param TubeB The second tube.
+     * @param OutPlaneIndicesA Indices of intersecting planes for TubeA.
+     * @param OutPlaneIndicesB Indices of intersecting planes for TubeB.
+     * @param OutLineIndicesA Indices of intersecting lines for TubeA.
+     * @param OutLineIndicesB Indices of intersecting lines for TubeB.
+     */
     void FilterPlanesAndLines(
         const FTubeData& TubeA,
         const FTubeData& TubeB,
@@ -91,7 +179,6 @@ namespace DoobGeometryUtils {
 
     /**
      * Generates the intersection curve of two cylindrical shapes based on their 2D profiles and transformations.
-     *
      * @param MainProfile The 2D profile of the main cylinder.
      * @param MainTransform The transformation applied to the main cylinder.
      * @param LateralProfile The 2D profile of the lateral cylinder.

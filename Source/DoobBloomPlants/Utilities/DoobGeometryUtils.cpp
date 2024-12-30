@@ -241,16 +241,28 @@ namespace DoobGeometryUtils {
 					UE_LOG(LogTemp, Log, TEXT("Rings intersect: TubeA Ring %d and TubeB Ring %d"), i, j);
 
 					// add rings that are close enough to possibly intersect
-					OutPlaneIndicesA.Add(i);
-					OutPlaneIndicesB.Add(j);
+					if (!OutPlaneIndicesA.Contains(i)) {
+						OutPlaneIndicesA.Add(i);
+					}
+					if (!OutPlaneIndicesB.Contains(j)) {
+						OutPlaneIndicesB.Add(j);
+					}
 
 					// add connected lines for TubeA
-					OutLineIndicesA.Add(i);
-					OutLineIndicesA.Add((i + 1) % TubeA.Rings.Num());
+					if (!OutLineIndicesA.Contains(i)) {
+						OutLineIndicesA.Add(i);
+					}
+					if (!OutLineIndicesA.Contains((i + 1) % TubeA.Rings.Num())) {
+						OutLineIndicesA.Add((i + 1) % TubeA.Rings.Num());
+					}
 
 					// add connected lines for TubeB
-					OutLineIndicesB.Add(j);
-					OutLineIndicesB.Add((j + 1) % TubeB.Rings.Num());
+					if (!OutLineIndicesB.Contains(j)) {
+						OutLineIndicesB.Add(j);
+					}
+					if (!OutLineIndicesB.Contains((j + 1) % TubeB.Rings.Num())) {
+						OutLineIndicesB.Add((j + 1) % TubeB.Rings.Num());
+					}
 				}
 				else {
 					UE_LOG(LogTemp, Log, TEXT("Rings do not intersect: TubeA Ring %d and TubeB Ring %d"), i, j);
