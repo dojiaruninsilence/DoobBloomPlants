@@ -11,7 +11,7 @@
 // Sets default values
 AProceduralStem::AProceduralStem()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	//PrimaryActorTick.bCanEverTick = true;
 
 	// Create the Procedural Mesh Component
@@ -28,7 +28,7 @@ void AProceduralStem::BeginPlay()
 {
 	Super::BeginPlay();
 	//GenerateStem();
-	
+
 }
 
 // Called every frame
@@ -164,7 +164,7 @@ void AProceduralStem::GenerateStem()
 
 		// Generate the cylinder for this segment
 		//GeometryUtilities::ConnectRings(StartRingVertices, EndRingVertices, Vertices, Triangles, BaseIndex);
-		
+
 		// Update the current position and apply a random rotation
 		LastRingVertices = EndRingVertices;
 		//CurrentPosition = NextPosition + (CurrentDirection * SegmentGapLength);
@@ -172,7 +172,7 @@ void AProceduralStem::GenerateStem()
 		// Apply random tilt
 		// probability check to determine growth behavior
 		float RandomValue = FMath::FRand(); // rand val between 0.0 and 1.0
-		
+
 		//Determine the bias direction based on probabilities
 		FVector BiasDirection;
 		if (RandomValue < GrowTowardProbability)
@@ -181,7 +181,7 @@ void AProceduralStem::GenerateStem()
 			BiasDirection = FMath::Lerp(CurrentDirection, TargetPoint, GrowTowardAmount).GetSafeNormal();
 		}
 		else if (RandomValue < GrowTowardProbability + GrowAwayProbability)
-		{			
+		{
 			if (GrowCurveType == 1 && i > (NumSegments / 3) * 2)
 			{
 				BiasDirection = FMath::Lerp(CurrentDirection, FVector(0, 0, -1), GrowAwayAmount).GetSafeNormal();
@@ -196,12 +196,12 @@ void AProceduralStem::GenerateStem()
 			{
 				//  Grow away from the target point
 				BiasDirection = FMath::Lerp(CurrentDirection, PerpVector, GrowAwayAmount).GetSafeNormal();
-			}			
+			}
 		}
 		else
 		{
 			// completely random growth
-			FVector TempRandomDirection = FVector(FMath::FRandRange(-1.0f , 1.0f), FMath::FRandRange(-1.0f, 1.0f), FMath::FRandRange(-1.0f, 1.0f)).GetSafeNormal();
+			FVector TempRandomDirection = FVector(FMath::FRandRange(-1.0f, 1.0f), FMath::FRandRange(-1.0f, 1.0f), FMath::FRandRange(-1.0f, 1.0f)).GetSafeNormal();
 			BiasDirection = FMath::Lerp(CurrentDirection, TempRandomDirection, Randomness).GetSafeNormal();
 		}
 
@@ -228,7 +228,7 @@ void AProceduralStem::GenerateStem()
 	// store the end position and direction
 	EndPosition = NextPosition;
 
-	
+
 
 	// smooth vertices
 	DoobMeshUtils::SmoothMeshVertices(Vertices, Triangles, 1);
@@ -253,7 +253,7 @@ void AProceduralStem::GenerateStem()
 	Tangents.Init(FProcMeshTangent(), Vertices.Num());
 
 	// create the mesh section
-	StemMesh->CreateMeshSection(0, Vertices, Triangles, Normals, UV0, VertexColors,Tangents, true);
+	StemMesh->CreateMeshSection(0, Vertices, Triangles, Normals, UV0, VertexColors, Tangents, true);
 }
 
 FVector AProceduralStem::GetStartDirection()
@@ -284,4 +284,3 @@ float AProceduralStem::GetEndRadius()
 {
 	return EndRadius;
 }
-

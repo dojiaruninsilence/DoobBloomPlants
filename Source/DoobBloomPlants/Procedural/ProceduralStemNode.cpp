@@ -11,7 +11,7 @@
 // Sets default values
 AProceduralStemNode::AProceduralStemNode()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	//PrimaryActorTick.bCanEverTick = true;
 
 	// Create the Procedural Mesh Component
@@ -27,7 +27,7 @@ void AProceduralStemNode::BeginPlay()
 {
 	Super::BeginPlay();
 	//GenerateNode()
-	
+
 }
 
 // Called every frame
@@ -114,14 +114,14 @@ void AProceduralStemNode::GenerateNode()
 		int32 curveType = 0;
 		int32 steps = NodeSegments / 2;
 		if (i <= steps)
-		{			
+		{
 			NextRadius = DoobMathUtils::FloatChangeWithCurve(StartRadius, RadiusModified, CurrentRadius, steps, i, curveType);
 			CurrentSegmentLength = DoobMathUtils::FloatChangeWithCurve(StartSegmentLength, EndSegmentLength, CurrentSegmentLength, steps, i, curveType);
 		}
 		else
 		{
 			int32 step = i - steps;
-			NextRadius = DoobMathUtils::FloatChangeWithCurve(RadiusModified, EndRadius, CurrentRadius, steps, step, curveType+1);
+			NextRadius = DoobMathUtils::FloatChangeWithCurve(RadiusModified, EndRadius, CurrentRadius, steps, step, curveType + 1);
 			CurrentSegmentLength = DoobMathUtils::FloatChangeWithCurve(EndSegmentLength, StartSegmentLength, CurrentSegmentLength, steps, step, curveType + 1);
 		}
 

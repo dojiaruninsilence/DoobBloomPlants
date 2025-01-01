@@ -55,7 +55,7 @@ namespace DoobGeometryUtils {
      * @param NumSides Number of sides (vertices) in the ring.
      * @param RingData Output data structure to store the ring information.
      */
-	void GenerateRing(FVector Center, FVector Direction, FVector UpVector, float Radius, int32 NumSides, FRingData& RingData);
+    void GenerateRing(FVector Center, FVector Direction, FVector UpVector, float Radius, int32 NumSides, FRingData& RingData);
 
     /**
      * Connects two rings of vertices to form triangles between them.
@@ -65,7 +65,7 @@ namespace DoobGeometryUtils {
      * @param Triangles Output array of triangle indices.
      * @param BaseIndex Starting index for the vertices.
      */
-	void ConnectRings(const TArray<FVector>& RingA, const TArray<FVector>& RingB, TArray<FVector>& Vertices, TArray<int32>& Triangles, int32& BaseIndex);
+    void ConnectRings(const TArray<FVector>& RingA, const TArray<FVector>& RingB, TArray<FVector>& Vertices, TArray<int32>& Triangles, int32& BaseIndex);
 
     /**
      * Connects an array of rings into a continuous tube.
@@ -74,7 +74,7 @@ namespace DoobGeometryUtils {
      * @param Triangles Output array of triangle indices.
      * @param BaseIndex Starting index for the vertices.
      */
-	void ConnectRingArray(const TArray<FRingData>& Rings, TArray<FVector>& Vertices, TArray<int32>& Triangles, int32& BaseIndex);
+    void ConnectRingArray(const TArray<FRingData>& Rings, TArray<FVector>& Vertices, TArray<int32>& Triangles, int32& BaseIndex);
 
 
     /**

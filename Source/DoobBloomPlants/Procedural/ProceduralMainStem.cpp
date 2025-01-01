@@ -10,7 +10,7 @@
 // Sets default values
 AProceduralMainStem::AProceduralMainStem()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	// Create and set the root component
@@ -28,7 +28,7 @@ void AProceduralMainStem::BeginPlay()
 	Super::BeginPlay();
 
 	//GenerateMainStemChain();
-	
+
 }
 
 // Called every frame

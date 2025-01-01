@@ -104,4 +104,3 @@ namespace DoobMathUtils {
 		EndValue = StartBound + ((SegmentIndex + 1) / (float)NumSegments) * (EndBound - StartBound);
 	}
 }
-

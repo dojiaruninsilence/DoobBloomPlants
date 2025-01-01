@@ -16,8 +16,8 @@ public class DoobBloomPlants : ModuleRules
         // Add include paths for Utilities and other custom folders
         PublicIncludePaths.AddRange(new string[]
         {
+            Path.Combine(ModuleDirectory, "DoobUtils"),
             Path.Combine(ModuleDirectory, "Procedural"),
-            Path.Combine(ModuleDirectory, "Utilities"),
             Path.Combine(ModuleDirectory, "Tests")
         });
 

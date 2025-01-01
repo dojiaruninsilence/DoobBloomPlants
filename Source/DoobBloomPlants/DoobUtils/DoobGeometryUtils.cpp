@@ -157,10 +157,12 @@ namespace DoobGeometryUtils {
 	}
 
 	FPlaneEquation::FPlaneEquation()
-		: Normal(), D() {}
+		: Normal(), D() {
+	}
 
 	FPlaneEquation::FPlaneEquation(const FVector& InNormal, float InD)
-		: Normal(InNormal), D(InD) { }
+		: Normal(InNormal), D(InD) {
+	}
 
 	FPlaneEquation CalculatePlaneFromRings(const FRingData& RingA, const FRingData& RingB) {
 		// calc teh direction vector between the centers of the 2 rings

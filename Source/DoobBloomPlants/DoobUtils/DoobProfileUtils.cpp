@@ -5,9 +5,10 @@ namespace DoobProfileUtils {
 	F2DProfile::F2DProfile() : Points(), bIsClosed(true) {
 
 	}
-	
+
 	F2DProfile::F2DProfile(TArray<FVector2D> InPoints, bool InClosed)
-		: Points(InPoints), bIsClosed(InClosed) { }
+		: Points(InPoints), bIsClosed(InClosed) {
+	}
 
 	// scale the profile by a given factor
 	void F2DProfile::Scale(float Factor) {
@@ -34,7 +35,7 @@ namespace DoobProfileUtils {
 			Point = FVector2D(X, Y);
 		}
 	}
-	
+
 
 	F2DProfile GenerateLinearProfile(int32 NumSegments, float StartHeight, float EndHeight) {
 		TArray<FVector2D> Points;

@@ -13,8 +13,8 @@ UCLASS()
 class DOOBBLOOMPLANTS_API AProceduralMainStem : public AActor
 {
 	GENERATED_BODY()
-	
-public:	
+
+public:
 	// Sets default values for this actor's properties
 	AProceduralMainStem();
 
@@ -23,7 +23,7 @@ protected:
 	virtual void BeginPlay() override;
 
 
-public:	
+public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
