@@ -3,6 +3,7 @@
 #include "Misc/AutomationTest.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FFilterPlanesAndLinesTest, "Doob.Geometry.FilterPlanesAndLines", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FCalculateIntersectionWithPlaneTest, "Doob.Geometry.CalculateIntersectionWithPlane", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 
 bool FFilterPlanesAndLinesTest::RunTest(const FString& Parameters) {
     // Define parameters for TubeA
@@ -57,6 +58,73 @@ bool FFilterPlanesAndLinesTest::RunTest(const FString& Parameters) {
     TestEqual("PlaneIndicesB size matches expected", PlaneIndicesB.Num(), 2);
     TestEqual("LineIndicesA size matches expected", LineIndicesA.Num(), 2);
     TestEqual("LineIndicesB size matches expected", LineIndicesB.Num(), 2);
+
+    return true;
+}
+
+bool FCalculateIntersectionWithPlaneTest::RunTest(const FString& Parameters) {
+    // Test Case 1: Perpendicular Ray and Plane
+    {
+        DoobGeometryUtils::FPlaneEquation Plane(FVector(0, 0, 1), -10); // Plane Z = 10
+        FVector RayOrigin(0, 0, 0); // Ray starts at origin
+        FVector RayDirection(0, 0, 1); // Ray points upward along Z-axis
+        FVector IntersectionPoint;
+
+        bool bIntersected = DoobGeometryUtils::CalculateIntersectionWithPlane(Plane, RayOrigin, RayDirection, IntersectionPoint);
+
+        TestEqual("Perpendicular ray intersects plane", bIntersected, true);
+        TestEqual("Intersection point is correct", IntersectionPoint, FVector(0, 0, 10));
+    }
+
+    // Test Case 2: Parallel Ray and Plane
+    {
+        DoobGeometryUtils::FPlaneEquation Plane(FVector(0, 0, 1), -10); // Plane Z = 10
+        FVector RayOrigin(0, 0, 5); // Ray starts below the plane
+        FVector RayDirection(1, 0, 0); // Ray points along X-axis (parallel to the plane)
+        FVector IntersectionPoint;
+
+        bool bIntersected = DoobGeometryUtils::CalculateIntersectionWithPlane(Plane, RayOrigin, RayDirection, IntersectionPoint);
+
+        TestEqual("Parallel ray does not intersect plane", bIntersected, false);
+    }
+
+    // Test Case 3: Ray Originating on the Plane
+    {
+        DoobGeometryUtils::FPlaneEquation Plane(FVector(0, 0, 1), -10); // Plane Z = 10
+        FVector RayOrigin(0, 0, 10); // Ray starts exactly on the plane
+        FVector RayDirection(0, 1, 0); // Ray points along Y-axis
+        FVector IntersectionPoint;
+
+        // Log initial parameters
+        UE_LOG(LogTemp, Log, TEXT("Testing Ray Originating on Plane"));
+        UE_LOG(LogTemp, Log, TEXT("Plane: Normal=(%s), D=%f"), *Plane.Normal.ToString(), Plane.D);
+        UE_LOG(LogTemp, Log, TEXT("Ray Origin: %s, Direction: %s"), *RayOrigin.ToString(), *RayDirection.ToString());
+
+
+        bool bIntersected = DoobGeometryUtils::CalculateIntersectionWithPlane(Plane, RayOrigin, RayDirection, IntersectionPoint);
+
+        // Log results
+        UE_LOG(LogTemp, Log, TEXT("Intersection Result: %s"), bIntersected ? TEXT("True") : TEXT("False"));
+        if (bIntersected) {
+            UE_LOG(LogTemp, Log, TEXT("Intersection Point: %s"), *IntersectionPoint.ToString());
+        }
+
+        TestEqual("Ray originating on plane intersects plane", bIntersected, true);
+        TestEqual("Intersection point is at origin", IntersectionPoint, RayOrigin);
+    }
+
+    // Test Case 4: Skew Ray
+    {
+        DoobGeometryUtils::FPlaneEquation Plane(FVector(0, 0, 1), -10); // Plane Z = 10
+        FVector RayOrigin(0, 0, 0); // Ray starts at origin
+        FVector RayDirection(1, 1, 1); // Ray points diagonally
+        FVector IntersectionPoint;
+
+        bool bIntersected = DoobGeometryUtils::CalculateIntersectionWithPlane(Plane, RayOrigin, RayDirection, IntersectionPoint);
+
+        TestEqual("Skew ray intersects plane", bIntersected, true);
+        TestEqual("Intersection point is correct", IntersectionPoint, FVector(10, 10, 10));
+    }
 
     return true;
 }

@@ -189,13 +189,23 @@ namespace DoobGeometryUtils {
 		// calc the dot product of the plane's normal and the ray direction
 		float NDotD = FVector::DotProduct(Plane.Normal, RayDirection);
 
+		float Numerator = -(FVector::DotProduct(Plane.Normal, RayOrigin) + Plane.D);
+
 		// check if the ray is parallel to the plane
 		if (FMath::IsNearlyZero(NDotD)) {
+			float DistanceFromPlane = -Numerator;
+
+			// check if the ray origin lies on the plane
+			if (FMath::IsNearlyZero(DistanceFromPlane)) {
+				OutIntersectionPoint = RayOrigin; // orign is an intersection point
+				return true;
+			}
+
 			return false; // no intersection, ray parallel to the plane
 		}
 
 		// calc t, the parameter of the ray at the intersection point
-		float t = -(FVector::DotProduct(Plane.Normal, RayOrigin) + Plane.D) / NDotD;
+		float t = Numerator / NDotD;
 
 		// if t < 0, intersection is behind the ray origin
 		if (t < 0.0f) {
@@ -205,7 +215,7 @@ namespace DoobGeometryUtils {
 		// compute the intersection point using the ray equation
 		OutIntersectionPoint = RayOrigin + t * RayDirection;
 
-		return true; // successfull calculated
+		return true; // successfully calculated an intersection point 
 	}
 
 	bool PointInsideCircle(const FVector& Point, const FVector& Center, float Radius) {
