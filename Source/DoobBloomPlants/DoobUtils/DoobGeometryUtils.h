@@ -26,6 +26,13 @@ namespace DoobGeometryUtils {
         bool bIsClosed = true; ///< Whether the ring is closed.
         int32 NumVertices = Vertices.Num(); ///< Number of vertices in the ring.
         FName RingID; ///< Unique identifier for the ring.
+        bool bIsComplete = true; ///< Whether the ring is completed or missing vertices
+    };
+
+    struct FIntersectionRingData {
+        TArray<FVector> CombinedVertices;
+        TArray<FVector> MainTubeVertices;
+        TArray<FVector> LateralTubeVertices;
     };
 
     /**
@@ -56,6 +63,32 @@ namespace DoobGeometryUtils {
      * @param RingData Output data structure to store the ring information.
      */
     void GenerateRing(FVector Center, FVector Direction, FVector UpVector, float Radius, int32 NumSides, FRingData& RingData);
+
+    void GenerateIntersectionRing(
+        const FTubeData& MainTube,
+        const FTubeData& LateralTube,
+        FIntersectionRingData& OutRing,
+        float Precision = KINDA_SMALL_NUMBER
+    );
+
+    void GenerateHalfIntersectionRing(
+        const FTubeData& MainTube,
+        const FTubeData& LateralTube,
+        TArray<FVector>& OutRingData,
+        float Precision = KINDA_SMALL_NUMBER
+    );
+
+    bool LineSegmentIntersectsTriangle(
+        const FVector& LineStart,
+        const FVector& LineEnd,
+        const FVector& V0,
+        const FVector& V1,
+        const FVector& V2,
+        FVector& OutIntersectionPoint
+    );
+
+    FVector ComputeCentroid(const TArray<FVector>& Vertices);
+    TArray<FVector> OrderRingVertices(const TArray<FVector>& InputVertices);
 
     /**
      * Connects two rings of vertices to form triangles between them.
@@ -158,19 +191,31 @@ namespace DoobGeometryUtils {
     bool PointInsideCircle(const FVector& Point, const FVector& Center, float Radius);
 
     /**
-     * Filters intersecting planes and lines between two tubes.
-     * @param TubeA The first tube.
-     * @param TubeB The second tube.
-     * @param OutPlaneIndicesA Indices of intersecting planes for TubeA.
-     * @param OutPlaneIndicesB Indices of intersecting planes for TubeB.
-     * @param OutLineIndicesA Indices of intersecting lines for TubeA.
-     * @param OutLineIndicesB Indices of intersecting lines for TubeB.
-     */
+     * Filters and identifies planes and lines that potentially intersect between two tubes.
+     *
+     * This function determines the relevant planes and lines in each tube that are within
+     * the range of potential intersections. It outputs indices of the intersecting planes
+     * and lines for both TubeA and TubeB. The filtering accounts for the geometry of the
+     * tubes, including their positions, radii, and alignment.
+     *
+     * @param TubeA The first tube, containing its rings, center positions, and radii.
+     * @param TubeB The second tube, containing its rings, center positions, and radii.
+     * @param OutPlaneIndicesA A list of index pairs representing planes in TubeA that
+     *                         are near potential intersection points. Each pair indicates
+     *                         a plane defined by two rings in TubeA.
+     * @param OutPlaneIndicesB A list of index pairs representing planes in TubeB that
+     *                         are near potential intersection points. Each pair indicates
+     *                         a plane defined by two rings in TubeB.
+     * @param OutLineIndicesA A list of indices representing lines in TubeA that are
+     *                        near potential intersection planes of TubeB.
+     * @param OutLineIndicesB A list of indices representing lines in TubeB that are
+     *                        near potential intersection planes of TubeA.
+ */
     void FilterPlanesAndLines(
         const FTubeData& TubeA,
         const FTubeData& TubeB,
-        TArray<int32>& OutPlaneIndicesA,
-        TArray<int32>& OutPlaneIndicesB,
+        TArray<TPair<int32, int32>>& OutPlaneIndicesA,
+        TArray<TPair<int32, int32>>& OutPlaneIndicesB,
         TArray<int32>& OutLineIndicesA,
         TArray<int32>& OutLineIndicesB
     );

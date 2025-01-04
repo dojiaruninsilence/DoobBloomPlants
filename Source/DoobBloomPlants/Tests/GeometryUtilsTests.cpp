@@ -5,6 +5,8 @@
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FFilterPlanesAndLinesTest, "Doob.Geometry.FilterPlanesAndLines", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FCalculateIntersectionWithPlaneTest, "Doob.Geometry.CalculateIntersectionWithPlane", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 
+
+
 bool FFilterPlanesAndLinesTest::RunTest(const FString& Parameters) {
     // Define parameters for TubeA
     FVector StartPositionA(0, 0, 0);
@@ -50,14 +52,43 @@ bool FFilterPlanesAndLinesTest::RunTest(const FString& Parameters) {
     }
 
     // Call the function to test
-    TArray<int32> PlaneIndicesA, PlaneIndicesB, LineIndicesA, LineIndicesB;
+    TArray<TPair<int32, int32>> PlaneIndicesA, PlaneIndicesB;
+    TArray<int32> LineIndicesA, LineIndicesB;
     DoobGeometryUtils::FilterPlanesAndLines(TubeA, TubeB, PlaneIndicesA, PlaneIndicesB, LineIndicesA, LineIndicesB);
+
+    // Log Plane Indices for TubeA
+    UE_LOG(LogTemp, Log, TEXT("TubeA Plane Indices:"));
+    for (const TPair<int32, int32>& Pair : PlaneIndicesA) {
+        UE_LOG(LogTemp, Log, TEXT("  RingIndex: %d, SideIndex: %d"), Pair.Key, Pair.Value);
+    }
+
+    // Log Plane Indices for TubeB
+    UE_LOG(LogTemp, Log, TEXT("TubeB Plane Indices:"));
+    for (const TPair<int32, int32>& Pair : PlaneIndicesB) {
+        UE_LOG(LogTemp, Log, TEXT("  RingIndex: %d, SideIndex: %d"), Pair.Key, Pair.Value);
+    }
+
+    // Log Line Indices for TubeA
+    UE_LOG(LogTemp, Log, TEXT("TubeA Line Indices:"));
+    for (int32 Index : LineIndicesA) {
+        UE_LOG(LogTemp, Log, TEXT("  LineIndex: %d"), Index);
+    }
+
+    // Log Line Indices for TubeB
+    UE_LOG(LogTemp, Log, TEXT("TubeB Line Indices:"));
+    for (int32 Index : LineIndicesB) {
+        UE_LOG(LogTemp, Log, TEXT("  LineIndex: %d"), Index);
+    }
 
     // Verify results
     TestEqual("PlaneIndicesA size matches expected", PlaneIndicesA.Num(), 2);
     TestEqual("PlaneIndicesB size matches expected", PlaneIndicesB.Num(), 2);
     TestEqual("LineIndicesA size matches expected", LineIndicesA.Num(), 2);
     TestEqual("LineIndicesB size matches expected", LineIndicesB.Num(), 2);
+
+    // Optional: Verify specific contents of the indices if needed
+    TestEqual("First PlaneIndicesA pair matches expected", PlaneIndicesA[0], TPair<int32, int32>(0, 0));
+    TestEqual("First PlaneIndicesB pair matches expected", PlaneIndicesB[0], TPair<int32, int32>(0, 0));
 
     return true;
 }
