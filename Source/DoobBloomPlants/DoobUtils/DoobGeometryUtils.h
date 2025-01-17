@@ -33,6 +33,26 @@ namespace DoobGeometryUtils {
         TArray<FVector> CombinedVertices;
         TArray<FVector> MainTubeVertices;
         TArray<FVector> LateralTubeVertices;
+        FVector Centroid;
+        TArray<FVector> CardinalVertices; // nesw - 0123
+        TArray<int32> CardinalIndices;
+        TArray<FVector> BottomLeftVertices;
+        TArray<FVector> BottomRightVertices;
+        TArray<FVector> TopRightVertices;
+        TArray<FVector> TopLeftVertices;
+    };
+
+    struct FIntersectionSquareData {
+        TArray<FVector> Corners;
+        // TArray<int32> CornerRingConnectionIndices;
+        TArray<FVector> LeftSideRingConnections;
+        TArray<FVector> RightSideRingConnections;
+        FVector Center;
+        TArray<float> Angles;
+        TArray<FVector> BottomLeftVertices;
+        TArray<FVector> BottomRightVertices;
+        TArray<FVector> TopRightVertices;
+        TArray<FVector> TopLeftVertices;
     };
 
     /**
@@ -51,6 +71,21 @@ namespace DoobGeometryUtils {
         int32 NumSides; ///< Number of sides per segment.
         int32 NumRings = Rings.Num(); ///< Number of rings forming the tube.
         FName TubeID; ///< Unique identifier for the tube.
+    };
+
+    struct FTwoTubeIntersectionData {
+        FTubeData MainTube;
+        FTubeData LateralTube;
+        FIntersectionRingData IntersectionRing;
+        FIntersectionSquareData IntersectionSquare;
+        FRingData MTAboveIntersectionRing;
+        FRingData MTBelowIntersectionRing;
+        FRingData MTAboveIntersectionRingPartial;
+        FRingData MTBelowIntersectionRingPartial;
+        FTubeData LateralTubeIntersectionRings;
+        FRingData LateralTubeFirstFullRing;
+        TArray<FVector> AllVertices;
+        TArray<int32> Triangles;
     };
 
     /**
@@ -78,6 +113,19 @@ namespace DoobGeometryUtils {
         float Precision = KINDA_SMALL_NUMBER
     );
 
+    void GenerateSquareAroundIntersection(
+        const FRingData& LowestRing,
+        const FRingData& HighestRing,
+        const FIntersectionRingData& IntersectionRing,
+        int32 LeftIndex,
+        int32 RightIndex,
+        TArray<FVector>& OutSquareVertices
+    );
+
+    void GenerateAboveBelowIntersectionRings(FTwoTubeIntersectionData& TubeIntersectionData);
+
+    void GenerateLateralTubeIntersectionRings(FTwoTubeIntersectionData& TubeIntersectionData);
+
     bool LineSegmentIntersectsTriangle(
         const FVector& LineStart,
         const FVector& LineEnd,
@@ -100,6 +148,8 @@ namespace DoobGeometryUtils {
      */
     void ConnectRings(const TArray<FVector>& RingA, const TArray<FVector>& RingB, TArray<FVector>& Vertices, TArray<int32>& Triangles, int32& BaseIndex);
 
+    void ConnectPartialRings(const TArray<FVector>& RingA, const TArray<FVector>& RingB, TArray<FVector>& Vertices, TArray<int32>& Triangles, int32& BaseIndex);
+
     /**
      * Connects an array of rings into a continuous tube.
      * @param Rings Array of ring data.
@@ -109,6 +159,13 @@ namespace DoobGeometryUtils {
      */
     void ConnectRingArray(const TArray<FRingData>& Rings, TArray<FVector>& Vertices, TArray<int32>& Triangles, int32& BaseIndex);
 
+    void ConnectPartialRingArray(const TArray<FRingData>& Rings, TArray<FVector>& Vertices, TArray<int32>& Triangles, int32& BaseIndex);
+
+    void ConnectPartialRingArrayPaired(const TArray<FRingData>& Rings, TArray<FVector>& Vertices, TArray<int32>& Triangles, int32& BaseIndex);
+
+    void ConnectIntersectionRingToSquare(FTwoTubeIntersectionData& TubeIntersectionData, int32& BaseIndex);
+
+    void ConnectTwoTubeIntersection(FTwoTubeIntersectionData& TubeIntersectionData);
 
     /**
      * Constructs a cylindrical tube from a 2D profile and input parameters.
@@ -133,6 +190,64 @@ namespace DoobGeometryUtils {
         FTubeData& OutTube,
         bool ApplyBothAxis
     );
+
+    bool IsPointInsideFrustum(const FRingData& StartRing, const FRingData& EndRing, const FVector& Point);
+
+    void RemoveInternalVertices(const FTubeData& TubeA, FTubeData& TubeB);
+
+    void FindSegmentForPoint(
+        const FVector& Point,
+        const FTubeData& Tube,
+        FRingData& StartRing,
+        FRingData& EndRing
+    );
+
+    FVector CalculateCenterLinePoint(
+        const FVector& Point,
+        const FRingData& StartRing,
+        const FRingData& EndRing
+    );
+
+    float InterpolatedRingRadius(
+        const FVector& CenterlinePoint,
+        const FRingData& StartRing,
+        const FRingData& EndRing
+    );
+
+    void FindClosestVertex(const FVector& InputVertex, const TArray<FVector>& Vertices, FVector& OutVertex, int32& OutIndex);
+
+    FVector FindIntersectionOnRing(const TArray<FVector>& RingVertices, const FVector& Direction, const FVector& Center);
+
+    FVector FindIntersectionOnNewRing(const TArray<FVector>& RingVertices, const FVector& Direction, const FVector& Center, const FVector& TargetVertex);
+
+    void FindIntersectionRingCardinalPoints(FIntersectionRingData& IntersectionRing, const FVector& StartCenter, const FVector& EndCenter);
+
+    FVector FindFrustumPerpendicularDirection(const FRingData& EndRing, const FRingData& StartRing, const FVector& ExteriorPoint);
+
+    void OrderSquareIntersectionConnections(FTwoTubeIntersectionData& TubeIntersectionData);
+
+    FVector MakeDirectionPerpendicularToLine(const FVector& Direction, const FVector& Point1, const FVector& Point2);
+    // --------------------------------------------------------if this works remove the other section ------------------------------------------------------//
+    void RemoveVerticesByInterpolatedDirections(
+        FTwoTubeIntersectionData& TubeIntersectionData,
+        FIntersectionSquareData& IntersectionSquare
+    );
+
+    // ---------------------------------------------------------- need to add this to a container utils file ------------------------------------------------------------------//
+    TArray<FVector> ReorderedArray(const TArray<FVector>& OriginalArray, int32 StartIndex);
+
+    // --------------------------------------------------------if this works remove the other section end ------------------------------------------------------//
+
+    void RemoveVerticesInsideSquareByAngle(
+        FTwoTubeIntersectionData& TubeIntersectionData,
+        FIntersectionSquareData& IntersectionSquare
+    );
+
+    void CalculateSquareCenter(FIntersectionSquareData& IntersectionSquare);
+
+    void GetSquareAngles(FIntersectionSquareData& IntersectionSquare);
+
+    bool IsVertexInsideSquareAngle(const FVector& Vertex, const FIntersectionSquareData& IntersectionSquare);
 
     // ------------------------------------------------------ Planes and Lines Intersections ------------------------------------------------------------ //
 
