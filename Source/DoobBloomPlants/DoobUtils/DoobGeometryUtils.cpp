@@ -35,9 +35,6 @@ namespace DoobGeometryUtils {
 			RingData.Vertices.Add(Vertex);
 		}
 
-		// close the ring by adding the first vertex again
-		//RingData.Vertices.Add(FirstVertex);
-
 		// calc the normal of the ring using right and forward vectors
 		RingData.Normal = FVector::CrossProduct(Right, Forward).GetSafeNormal();
 
@@ -79,8 +76,6 @@ namespace DoobGeometryUtils {
 			const FRingData& CurrentRingA = TubeA.Rings[LineIndexA];
 			const FRingData& NextRingA = TubeA.Rings[LineIndexA + 1];
 			int32 NumVerticesA = CurrentRingA.Vertices.Num();
-
-			UE_LOG(LogTemp, Log, TEXT("NumVerticesA: %d"), NumVerticesA);
 
 			for (int32 VertexIndexA = 0; VertexIndexA < NumVerticesA; ++VertexIndexA) {
 				FVector LineStartA = CurrentRingA.Vertices[VertexIndexA];
@@ -143,27 +138,6 @@ namespace DoobGeometryUtils {
 
 		// store vertices in output array
 		OutSquareVertices = { BottomLeft, BottomRight, TopRight, TopLeft };
-
-		// Log for debugging
-		UE_LOG(LogTemp, Log, TEXT("Square vertices:"));
-		for (const FVector& Vertex : OutSquareVertices) {
-			UE_LOG(LogTemp, Log, TEXT("(X:%f, Y:%f, Z:%f)"), Vertex.X, Vertex.Y, Vertex.Z);
-		}
-
-		UE_LOG(LogTemp, Log, TEXT("Lowest ring vertices:"));
-		for (const FVector& Vertex : LowestRing.Vertices) {
-			UE_LOG(LogTemp, Log, TEXT("(X:%f, Y:%f, Z:%f)"), Vertex.X, Vertex.Y, Vertex.Z);
-		}
-
-		UE_LOG(LogTemp, Log, TEXT("Highest ring vertices:"));
-		for (const FVector& Vertex : HighestRing.Vertices) {
-			UE_LOG(LogTemp, Log, TEXT("(X:%f, Y:%f, Z:%f)"), Vertex.X, Vertex.Y, Vertex.Z);
-		}
-
-		UE_LOG(LogTemp, Log, TEXT("Intersection ring vertices:"));
-		for (const FVector& Vertex : IntersectionRing.CombinedVertices) {
-			UE_LOG(LogTemp, Log, TEXT("(X:%f, Y:%f, Z:%f)"), Vertex.X, Vertex.Y, Vertex.Z);
-		}
 	}
 
 	void GenerateAboveBelowIntersectionRings(FTwoTubeIntersectionData& TubeIntersectionData) {
@@ -201,13 +175,8 @@ namespace DoobGeometryUtils {
 	}
 
 	void GenerateLateralTubeIntersectionRings(FTwoTubeIntersectionData& TubeIntersectionData) {
-
-		UE_LOG(LogTemp, Log, TEXT("Starting GenerateLateralTubeIntersectionRings"));
-
 		TubeIntersectionData.LateralTubeIntersectionRings = TubeIntersectionData.LateralTube;
 		TubeIntersectionData.LateralTubeIntersectionRings.Rings.Empty();
-
-		UE_LOG(LogTemp, Log, TEXT("LateralTubeIntersectionRings initialized and Rings cleared"));
 
 		// create temp ring to reorder ring to north point
 		TArray<FVector> ReorderedIntersection = ReorderedArray(
@@ -215,7 +184,6 @@ namespace DoobGeometryUtils {
 			TubeIntersectionData.IntersectionRing.CardinalIndices[0]
 		);
 
-		UE_LOG(LogTemp, Log, TEXT("Reordered Intersection Vertices: %d vertices"), ReorderedIntersection.Num());
 		int32 EndIndexAdjust = 0;
 
 		if (ReorderedIntersection.Num() % 4 == 0) {
@@ -225,8 +193,6 @@ namespace DoobGeometryUtils {
 
 		int32 StartIndex = (ReorderedIntersection.Num() / 4) - 1;
 		int32 EndIndex = 0;
-
-		UE_LOG(LogTemp, Log, TEXT("StartIndex: %d, EndIndex: %d"), StartIndex, EndIndex);
 
 		TArray<FVector> NorthSouthVerts = { 
 			TubeIntersectionData.IntersectionRing.CardinalVertices[0], 
@@ -238,15 +204,12 @@ namespace DoobGeometryUtils {
 
 		FindClosestVertex(TubeIntersectionData.LateralTube.EndPosition, NorthSouthVerts, ClosestVertToEnd, ClosestVertToEndIndex);
 
-		UE_LOG(LogTemp, Log, TEXT("Closest Vertex to EndPosition: %s at Index: %d"), *ClosestVertToEnd.ToString(), ClosestVertToEndIndex);
-
 		if (ClosestVertToEndIndex > 0) {
 			ReorderedIntersection.Empty();
 			ReorderedIntersection = ReorderedArray(
 				TubeIntersectionData.IntersectionRing.CombinedVertices,
 				TubeIntersectionData.IntersectionRing.CardinalIndices[2]
 			);
-			UE_LOG(LogTemp, Log, TEXT("Reordered Intersection based on ClosestVertToEndIndex"));
 		}
 
 		FRingData IntersectionRingStartRing;
@@ -255,8 +218,6 @@ namespace DoobGeometryUtils {
 		FindSegmentForPoint(TubeIntersectionData.IntersectionRing.Centroid, TubeIntersectionData.LateralTube, IntersectionRingStartRing, IntersectionRingEndRing);
 
 		float IntersectionRingRadius = InterpolatedRingRadius(TubeIntersectionData.IntersectionRing.Centroid, IntersectionRingStartRing, IntersectionRingEndRing);
-
-		UE_LOG(LogTemp, Log, TEXT("Calculated IntersectionRingRadius: %f"), IntersectionRingRadius);
 
 		FRingData FirstLateralIntersectionRing;
 
@@ -269,8 +230,6 @@ namespace DoobGeometryUtils {
 			FirstLateralIntersectionRing
 		);
 
-		UE_LOG(LogTemp, Log, TEXT("FirstLateralIntersectionRing generated"));
-
 		FirstLateralIntersectionRing.Vertices.Empty();
 
 		for (int32 i = StartIndex; i < ReorderedIntersection.Num() - StartIndex - EndIndexAdjust; ++i) {
@@ -279,12 +238,7 @@ namespace DoobGeometryUtils {
 
 			FVector SuperTempCenter = CalculateCenterLinePoint(VertexToAdd, IntersectionRingStartRing, IntersectionRingEndRing);
 			FVector SuperTempDirection = (VertexToAdd - SuperTempCenter).GetSafeNormal();
-			UE_LOG(LogTemp, Log, TEXT("Added vertex to FirstLateralIntersectionRing: X=%f, Y=%f, Z=%f, With Direction: X=%f, Y=%f, Z=%f"),
-				VertexToAdd.X, VertexToAdd.Y, VertexToAdd.Z, SuperTempDirection.X, SuperTempDirection.Y, SuperTempDirection.Z);
 		}
-
-		UE_LOG(LogTemp, Log, TEXT("Added vertices to FirstLateralIntersectionRing, total vertices: %d"), FirstLateralIntersectionRing.Vertices.Num());
-
 
 		FRingData CurrentLateralIntersectionRing;
 		FRingData PreviousLateralIntersectionRing;
@@ -302,11 +256,8 @@ namespace DoobGeometryUtils {
 
 			float CurrentVertexRingRadius = InterpolatedRingRadius(CurrentVertexCenterPoint, CurrentStartRing, CurrentEndRing);
 
-			UE_LOG(LogTemp, Log, TEXT("Processing vertex %d, CurrentVertexCenterPoint: %s, RingRadius: %f"), i, *CurrentVertexCenterPoint.ToString(), CurrentVertexRingRadius);
-
 			if (i == StartIndex) {
 				PreviousLateralIntersectionRing = FirstLateralIntersectionRing;
-				UE_LOG(LogTemp, Log, TEXT("Using FirstLateralIntersectionRing as PreviousLateralIntersectionRing"));
 			}
 			else {
 				PreviousLateralIntersectionRing = CurrentLateralIntersectionRing;
@@ -327,13 +278,8 @@ namespace DoobGeometryUtils {
 				TubeIntersectionData.LateralTube.NumSides,
 				CurrentLateralIntersectionRing
 			);
-
-			// -------------------------------------------- need to capture the last ring here to connect to the rest of the tube
 			
 			TubeIntersectionData.LateralTubeFirstFullRing = CurrentLateralIntersectionRing;
-			
-
-			UE_LOG(LogTemp, Log, TEXT("Generated CurrentLateralIntersectionRing for vertex %d"), i);
 
 			for (int32 j = 0; j < PreviousLateralIntersectionRing.Vertices.Num(); ++j) {
 				FRingData TempCurrentStartRing;
@@ -342,24 +288,11 @@ namespace DoobGeometryUtils {
 				FVector TempCurrentCenterlinePoint = CalculateCenterLinePoint(PreviousLateralIntersectionRing.Vertices[j], TempCurrentStartRing, TempCurrentEndRing);
 				FVector TempCurrentDirection = (PreviousLateralIntersectionRing.Vertices[j] - TempCurrentCenterlinePoint).GetSafeNormal();
 
-				UE_LOG(LogTemp, Log, TEXT("PreviousLateralIntersectionRing.Vertices[j] for CurrentLateralIntersectionRing: X=%f, Y=%f, Z=%f"),
-					PreviousLateralIntersectionRing.Vertices[j].X, PreviousLateralIntersectionRing.Vertices[j].Y, PreviousLateralIntersectionRing.Vertices[j].Z);
-				/*UE_LOG(LogTemp, Log, TEXT("TempCurrentDirection for CurrentLateralIntersectionRing: X=%f, Y=%f, Z=%f"),
-					TempCurrentDirection.X, TempCurrentDirection.Y, TempCurrentDirection.Z);*/
-
 				FVector TempCurrentVertex = FindIntersectionOnNewRing(CurrentLateralIntersectionRing.Vertices, TempCurrentDirection, CurrentLateralIntersectionRing.Center, PreviousLateralIntersectionRing.Vertices[j]);
 
 				TempCurrentVertices.Add(TempCurrentVertex);
-
-				UE_LOG(LogTemp, Log, TEXT("Added interpolated vertex to CurrentLateralIntersectionRing: X=%f, Y=%f, Z=%f"),
-					TempCurrentVertex.X, TempCurrentVertex.Y, TempCurrentVertex.Z);
 			}
 
-			UE_LOG(LogTemp, Log, TEXT("Updated vertices for CurrentLateralIntersectionRing"));
-
-			//TubeIntersectionData.LateralTubeIntersectionRings.Rings.Add(CurrentLateralIntersectionRing);
-
-			//CurrentLateralIntersectionRing.Vertices.Empty();
 			CurrentLateralIntersectionRing.Vertices = TempCurrentVertices;
 			CurrentLateralIntersectionRing.bIsClosed = false;
 			CurrentLateralIntersectionRing.bIsComplete = false;
@@ -370,22 +303,6 @@ namespace DoobGeometryUtils {
 			TubeIntersectionData.LateralTubeIntersectionRings.Rings.Add(PreviousLateralIntersectionRing);
 			TubeIntersectionData.LateralTubeIntersectionRings.Rings.Add(CurrentLateralIntersectionRing);
 		}
-
-		UE_LOG(LogTemp, Log, TEXT("Completed adding all rings"));
-
-		UE_LOG(LogTemp, Log, TEXT("Added PreviousLateralIntersectionRing: Vertices=%d, Center: X=%f, Y=%f, Z=%f"),
-			PreviousLateralIntersectionRing.Vertices.Num(),
-			PreviousLateralIntersectionRing.Center.X,
-			PreviousLateralIntersectionRing.Center.Y,
-			PreviousLateralIntersectionRing.Center.Z);
-
-		UE_LOG(LogTemp, Log, TEXT("Added CurrentLateralIntersectionRing: Vertices=%d, Center: X=%f, Y=%f, Z=%f"),
-			CurrentLateralIntersectionRing.Vertices.Num(),
-			CurrentLateralIntersectionRing.Center.X,
-			CurrentLateralIntersectionRing.Center.Y,
-			CurrentLateralIntersectionRing.Center.Z);
-
-		UE_LOG(LogTemp, Log, TEXT("Completed GenerateLateralTubeIntersectionRings"));
 	}
 
 	bool LineSegmentIntersectsTriangle(
@@ -447,9 +364,6 @@ namespace DoobGeometryUtils {
 		// array to store vertices with angles
 		TArray<TPair<float, FVector>> VerticesWithAngles;
 
-		// define the plane normal (approx, using 1st 2 vectors)
-		//FVector PlaneNormal = FVector::CrossProduct(InputVertices[1] - Centroid, InputVertices[0] - Centroid).GetSafeNormal();
-
 		// Compute a better plane normal based on averaging cross products of centroid and vertices
 		FVector AverageNormal = FVector::ZeroVector;
 		for (int32 i = 0; i < InputVertices.Num(); i++) {
@@ -485,7 +399,6 @@ namespace DoobGeometryUtils {
 	}
 
 	void ConnectRings(const TArray<FVector>& RingA, const TArray<FVector>& RingB, TArray<FVector>& Vertices, TArray<int32>& Triangles, int32& BaseIndex) {
-		UE_LOG(LogTemp, Log, TEXT("Connecting Rings. RingA Count: %d, RingB Count: %d"), RingA.Num(), RingB.Num());
 		for (int32 i = 0; i < RingA.Num(); ++i) {
 			int32 CurrentA = BaseIndex + i;
 			int32 NextA = BaseIndex + (i + 1) % RingA.Num();
@@ -497,25 +410,18 @@ namespace DoobGeometryUtils {
 			Triangles.Add(CurrentA);
 			Triangles.Add(NextA);
 			Triangles.Add(CurrentB);
-			UE_LOG(LogTemp, Log, TEXT("Triangle 1: %d, %d, %d"), CurrentA, NextA, CurrentB);
 
 			// Triangle 2
 			Triangles.Add(NextA);
 			Triangles.Add(NextB);
 			Triangles.Add(CurrentB);
-			UE_LOG(LogTemp, Log, TEXT("Triangle 2: %d, %d, %d"), NextA, NextB, CurrentB);
 		}
 		Vertices.Append(RingA);
 		Vertices.Append(RingB);
 		BaseIndex += RingA.Num() + RingB.Num();
-
-		UE_LOG(LogTemp, Log, TEXT("BaseIndex Updated: %d"), BaseIndex);
-		UE_LOG(LogTemp, Log, TEXT("Vertices Count: %d"), Vertices.Num());
-		UE_LOG(LogTemp, Log, TEXT("Triangles Count: %d"), Triangles.Num());
 	}
 
 	void ConnectPartialRings(const TArray<FVector>& RingA, const TArray<FVector>& RingB, TArray<FVector>& Vertices, TArray<int32>& Triangles, int32& BaseIndex) {
-		UE_LOG(LogTemp, Log, TEXT("Connecting Rings. RingA Count: %d, RingB Count: %d"), RingA.Num(), RingB.Num());
 		for (int32 i = 0; i < RingA.Num() - 1; ++i) {
 			int32 CurrentA = BaseIndex + i;
 			int32 NextA = BaseIndex + (i + 1);
@@ -527,21 +433,15 @@ namespace DoobGeometryUtils {
 			Triangles.Add(CurrentA);
 			Triangles.Add(NextA);
 			Triangles.Add(CurrentB);
-			UE_LOG(LogTemp, Log, TEXT("Triangle 1: %d, %d, %d"), CurrentA, NextA, CurrentB);
 
 			// Triangle 2
 			Triangles.Add(NextA);
 			Triangles.Add(NextB);
 			Triangles.Add(CurrentB);
-			UE_LOG(LogTemp, Log, TEXT("Triangle 2: %d, %d, %d"), NextA, NextB, CurrentB);
 		}
 		Vertices.Append(RingA);
 		Vertices.Append(RingB);
 		BaseIndex += RingA.Num() + RingB.Num();
-
-		UE_LOG(LogTemp, Log, TEXT("BaseIndex Updated: %d"), BaseIndex);
-		UE_LOG(LogTemp, Log, TEXT("Vertices Count: %d"), Vertices.Num());
-		UE_LOG(LogTemp, Log, TEXT("Triangles Count: %d"), Triangles.Num());
 	}
 
 	void ConnectRingArray(const TArray<FRingData>& Rings, TArray<FVector>& Vertices, TArray<int32>& Triangles, int32& BaseIndex) {
@@ -605,19 +505,6 @@ namespace DoobGeometryUtils {
 			int32 CurrentB = BaseIndex + TempRing.Num() + i;
 			int32 NextB = BaseIndex + TempRing.Num() + (i + 1);
 
-			UE_LOG(LogTemp, Log, TEXT("Indices: CurrentA: %d, NextA: %d, CurrentB: %d, NextB: %d"),
-				CurrentA, NextA, CurrentB, NextB);
-
-			/*// Triangle 1
-			TubeIntersectionData.Triangles.Add(CurrentA);
-			TubeIntersectionData.Triangles.Add(NextA);
-			TubeIntersectionData.Triangles.Add(CurrentB);
-
-			// Triangle 2
-			TubeIntersectionData.Triangles.Add(NextA);
-			TubeIntersectionData.Triangles.Add(NextB);
-			TubeIntersectionData.Triangles.Add(CurrentB);*/
-
 			// Triangle 1
 			TubeIntersectionData.Triangles.Add(CurrentA);
 			TubeIntersectionData.Triangles.Add(CurrentB);
@@ -632,10 +519,6 @@ namespace DoobGeometryUtils {
 		TubeIntersectionData.AllVertices.Append(TempRing);
 		TubeIntersectionData.AllVertices.Append(TempSquare);
 		BaseIndex += TempRing.Num() + TempSquare.Num();
-
-		UE_LOG(LogTemp, Log, TEXT("BaseIndex after connection: %d"), BaseIndex);
-		UE_LOG(LogTemp, Log, TEXT("Vertices Count: %d"), TubeIntersectionData.AllVertices.Num());
-		UE_LOG(LogTemp, Log, TEXT("Triangles Count: %d"), TubeIntersectionData.Triangles.Num());
 	}
 
 	void ConnectTwoTubeIntersection(FTwoTubeIntersectionData& TubeIntersectionData) {
@@ -646,7 +529,6 @@ namespace DoobGeometryUtils {
 		TArray<FRingData> FullLateralTubeRings;
 
 		PartialIntersectionRings.Add(TubeIntersectionData.MTBelowIntersectionRingPartial);
-		UE_LOG(LogTemp, Log, TEXT("Added MTBelowIntersectionRingPartial to PartialIntersectionRings."));
 
 		int32 MainTubeRingIndex = 0;
 		int32 BaseIndex = 0;
@@ -654,52 +536,34 @@ namespace DoobGeometryUtils {
 		bool AboveBelowAdded = false;
 
 		for (const FRingData Ring : TubeIntersectionData.MainTube.Rings) {
-			UE_LOG(LogTemp, Log, TEXT("Processing Ring %d. IsComplete: %s"),
-				MainTubeRingIndex,
-				Ring.bIsComplete ? TEXT("true") : TEXT("false"));
 
 			if (Ring.bIsComplete && MainTubeRingIndex <= (TubeIntersectionData.MainTube.Rings.Num() / 2) - 1) {
 				BelowIntersectionRings.Add(Ring);
-				UE_LOG(LogTemp, Log, TEXT("Added to BelowIntersectionRings. Total: %d"), BelowIntersectionRings.Num());
 			}
 			else if (!Ring.bIsComplete) {
 				PartialIntersectionRings.Add(Ring);
-				UE_LOG(LogTemp, Log, TEXT("Added to PartialIntersectionRings. Total: %d"), PartialIntersectionRings.Num());
 			}
 			else if (Ring.bIsComplete && MainTubeRingIndex > (TubeIntersectionData.MainTube.Rings.Num() / 2) - 1) {
 				if (!AboveBelowAdded) {
 					BelowIntersectionRings.Add(TubeIntersectionData.MTBelowIntersectionRing);
 					AboveIntersectionRings.Add(TubeIntersectionData.MTAboveIntersectionRing);
 					AboveBelowAdded = true;
-					UE_LOG(LogTemp, Log, TEXT("Ring Added to AboveIntersectionRings(Total: %d) and BelowIntersectionRings(Total: %d) from intersection rings"), AboveIntersectionRings.Num(), BelowIntersectionRings.Num());
 				}
 				AboveIntersectionRings.Add(Ring);
-				UE_LOG(LogTemp, Log, TEXT("Added to AboveIntersectionRings. Total: %d"), AboveIntersectionRings.Num());
-
 			}
 
 			MainTubeRingIndex++;
 		}
 
 		PartialIntersectionRings.Add(TubeIntersectionData.MTAboveIntersectionRingPartial);
-		UE_LOG(LogTemp, Log, TEXT("Added MTAboveIntersectionRingPartial to PartialIntersectionRings. Total: %d"), PartialIntersectionRings.Num());
-
-		// Debugging arrays before connection steps
-		UE_LOG(LogTemp, Log, TEXT("BelowIntersectionRings Count: %d"), BelowIntersectionRings.Num());
-		UE_LOG(LogTemp, Log, TEXT("PartialIntersectionRings Count: %d"), PartialIntersectionRings.Num());
-		UE_LOG(LogTemp, Log, TEXT("AboveIntersectionRings Count: %d"), AboveIntersectionRings.Num());
 
 		ConnectRingArray(BelowIntersectionRings, TubeIntersectionData.AllVertices, TubeIntersectionData.Triangles, BaseIndex);
-		UE_LOG(LogTemp, Log, TEXT("Connected BelowIntersectionRings. AllVertices: %d, Triangles: %d"), TubeIntersectionData.AllVertices.Num(), TubeIntersectionData.Triangles.Num());
 
 		ConnectPartialRingArray(PartialIntersectionRings, TubeIntersectionData.AllVertices, TubeIntersectionData.Triangles, BaseIndex);
-		UE_LOG(LogTemp, Log, TEXT("Connected PartialIntersectionRings. AllVertices: %d, Triangles: %d"), TubeIntersectionData.AllVertices.Num(), TubeIntersectionData.Triangles.Num());
 
 		ConnectIntersectionRingToSquare(TubeIntersectionData, BaseIndex);
-		UE_LOG(LogTemp, Log, TEXT("Connected IntersectionRing to Square. AllVertices: %d, Triangles: %d"), TubeIntersectionData.AllVertices.Num(), TubeIntersectionData.Triangles.Num());
 
 		ConnectRingArray(AboveIntersectionRings, TubeIntersectionData.AllVertices, TubeIntersectionData.Triangles, BaseIndex);
-		UE_LOG(LogTemp, Log, TEXT("Connected AboveIntersectionRings. AllVertices: %d, Triangles: %d"), TubeIntersectionData.AllVertices.Num(), TubeIntersectionData.Triangles.Num());
 
 		TArray<FRingData> ReversedLateralTubeIntersectionRings;
 
@@ -780,8 +644,6 @@ namespace DoobGeometryUtils {
 				segmentLength = segPercent * Length;
 
 				CurrentPosition = CurrentPosition + segmentLength * NormalizedDirection;
-
-				UE_LOG(LogTemp, Log, TEXT("iteration: %d, segPercent: %f, segmentLength: %f"), i, segPercent, segmentLength);
 			}
 			else {
 				segmentLength = t * Length;
@@ -944,7 +806,6 @@ namespace DoobGeometryUtils {
 		return FMath::Lerp(StartRing.Radius, EndRing.Radius, InterpolationFactor);
 	}
 
-	// ----------------------------------------rework so is a void and takes in an FVector& instead of returning one
 	void FindClosestVertex(const FVector& InputVertex, const TArray<FVector>& Vertices, FVector& OutVertex, int32& OutIndex) {
 		if (Vertices.Num() == 0) {
 			UE_LOG(LogTemp, Error, TEXT("Vertices array is empty"));
@@ -958,8 +819,6 @@ namespace DoobGeometryUtils {
 		FVector ClosestVertex = Vertices[0];
 		float MinDistance = FVector::DistSquared(InputVertex, ClosestVertex);
 
-		UE_LOG(LogTemp, Log, TEXT("Find Closest Vertex initial InputVertex: (X:%f/Y:%f/Z:%f), Closest Vertex: (X:%f/Y:%f/Z:%f), MinDistance: %f"), InputVertex.X, InputVertex.Y, InputVertex.Z, ClosestVertex.X, ClosestVertex.Y, ClosestVertex.Z, MinDistance);
-
 		// loop through vertices to find the closest
 		for (int32 i = 0; i < Vertices.Num(); ++i) {
 			float Distance = FVector::DistSquared(InputVertex, Vertices[i]);
@@ -967,11 +826,7 @@ namespace DoobGeometryUtils {
 				MinDistance = Distance;
 				ClosestVertex = Vertices[i];
 				OutIndex = i;
-
-				UE_LOG(LogTemp, Log, TEXT("Distance: %f, Vertex: (X:%f/Y:%f/Z:%f), MinDistance: %f, ClosestVertex: (X:%f/Y:%f/Z:%f)"), Distance, Vertices[i].X, Vertices[i].Y, Vertices[i].Z, MinDistance, ClosestVertex.X, ClosestVertex.Y, ClosestVertex.Z);
 			}
-
-			UE_LOG(LogTemp, Log, TEXT("-------------------------------------- Index: %d, OutIndex: %d ---------------------------------------"), i, OutIndex);
 		}
 
 		OutVertex = ClosestVertex;
@@ -1022,8 +877,6 @@ namespace DoobGeometryUtils {
 		int32 VertexCount = RingVertices.Num();
 
 		for (int32 i = 0; i < VertexCount; ++i) {
-
-			//UE_LOG(LogTemp, Log, TEXT("Ring Vertex %d: %s"), i, *RingVertices[i].ToString());
 			// Get the current line segment of the ring
 			FVector Start = RingVertices[i];
 			FVector End = RingVertices[(i + 1) % VertexCount]; // Wrap-around to start for the last segment
@@ -1034,17 +887,13 @@ namespace DoobGeometryUtils {
 
 			// Calculate the determinant to check parallelism
 			float Determinant = FVector::CrossProduct(LineVector, NormalizedDirection).Size();
-			//UE_LOG(LogTemp, Log, TEXT("Determinant: %f"), Determinant);
 			if (FMath::IsNearlyZero(Determinant)) {
-				//UE_LOG(LogTemp, Log, TEXT("Skipped parallel line segment: Start=%s, End=%s"), *Start.ToString(), *End.ToString());
 				continue; // Skip parallel lines
 			}
 
 			// Compute parametric values T and U
 			float T = FVector::CrossProduct(LineToCenter, NormalizedDirection).Size() / Determinant;
 			float U = FVector::CrossProduct(LineToCenter, LineVector).Size() / Determinant;
-
-			//UE_LOG(LogTemp, Log, TEXT("T=%f, U=%f for Segment: Start=%s, End=%s"), T, U, *Start.ToString(), *End.ToString());
 
 			// Check if the intersection lies within the segment bounds
 			if (T >= 0.0f && T <= 1.0f && U >= 0.0f) {
@@ -1071,89 +920,7 @@ namespace DoobGeometryUtils {
 			}
 		}
 
-		//UE_LOG(LogTemp, Log, TEXT("Closest Intersection Point: %s"), *ClosestPoint.ToString());
 		return ClosestPoint;
-		/*FVector NormalizedDirection = Direction.GetSafeNormal();
-		FVector IntersectionPoint = FVector::ZeroVector;
-
-		int32 VertexCount = RingVertices.Num();
-		float MinDistance = TNumericLimits<float>::Max(); // For finding the closest intersection
-		bool bFoundIntersection = false;
-
-		for (int32 i = 0; i < VertexCount; ++i) {
-			// Get the current line segment of the ring
-			FVector Start = RingVertices[i];
-			FVector End = RingVertices[(i + 1) % VertexCount];  // Wrap around to the start for the last segment
-
-			// Calculate the line vector and the vector from Start to Center
-			FVector LineVector = End - Start;
-			FVector LineToCenter = Center - Start;
-
-			// Compute the cross product to test for intersection
-			FVector Cross1 = FVector::CrossProduct(LineToCenter, NormalizedDirection);
-			FVector Cross2 = FVector::CrossProduct(LineToCenter, LineVector);
-			FVector Cross3 = FVector::CrossProduct(LineVector, NormalizedDirection);
-
-			// Calculate determinants
-			float Determinant = Cross3.Size();
-
-			// Log the determinant
-			UE_LOG(LogTemp, Log, TEXT("Determinant: %f"), Determinant);
-
-			// Skip if the line and direction are nearly parallel
-			if (FMath::Abs(Determinant) < KINDA_SMALL_NUMBER) {
-				continue;
-			}
-
-			// Compute T and U, preserving the sign
-			float T = FVector::DotProduct(Cross1, Cross3) / Determinant;
-			float U = FVector::DotProduct(Cross2, Cross3) / Determinant;
-
-			// Log T and U values
-			UE_LOG(LogTemp, Log, TEXT("T: %f, U: %f"), T, U);
-
-			// Check if the intersection lies within the line segment
-			if (T >= 0.0f && T <= 1.0f && U >= 0.0f) {
-				FVector CandidatePoint = Start + T * LineVector;
-
-				// Log the candidate point
-				UE_LOG(LogTemp, Log, TEXT("Candidate Intersection Point: %s"), *CandidatePoint.ToString());
-
-				// Update the intersection point if it's the closest
-				float Distance = FVector::DistSquared(CandidatePoint, Center);
-				if (Distance < MinDistance) {
-					MinDistance = Distance;
-					IntersectionPoint = CandidatePoint;
-					bFoundIntersection = true;
-					UE_LOG(LogTemp, Log, TEXT("Updated Intersection Point: %s"), *IntersectionPoint.ToString());
-				}
-			}
-		}
-
-		if (!bFoundIntersection) {
-			// Fallback: Find the closest point on the ring to the Center
-			MinDistance = TNumericLimits<float>::Max();
-			for (int32 i = 0; i < VertexCount; ++i) {
-				FVector Start = RingVertices[i];
-				FVector End = RingVertices[(i + 1) % VertexCount];
-
-				FVector ClosestPoint = FMath::ClosestPointOnSegment(Center, Start, End);
-				float Distance = FVector::DistSquared(Center, ClosestPoint);
-
-				// Log the closest point and its distance
-				UE_LOG(LogTemp, Log, TEXT("Closest Point on Segment: %s, Distance: %f"), *ClosestPoint.ToString(), Distance);
-
-				if (Distance < MinDistance) {
-					MinDistance = Distance;
-					IntersectionPoint = ClosestPoint;
-				}
-			}
-		}
-
-		// Log the final intersection point
-		UE_LOG(LogTemp, Log, TEXT("Final Intersection Point: %s"), *IntersectionPoint.ToString());
-
-		return IntersectionPoint;*/
 	}
 
 	void FindIntersectionRingCardinalPoints(FIntersectionRingData& IntersectionRing, const FVector& StartCenter, const FVector& EndCenter) {
@@ -1171,32 +938,6 @@ namespace DoobGeometryUtils {
 
 		IntersectionRing.CardinalVertices = { HighestVertex, RightVertex, LowestVertex, LeftVertex };
 		IntersectionRing.CardinalIndices = { HighestIndex, RightIndex, LowestIndex, LeftIndex };
-	}
-
-	FVector FindFrustumPerpendicularDirection(const FRingData& EndRing, const FRingData& StartRing, const FVector& ExteriorPoint) {
-		
-		// Calculate the direction vector between the two rings
-		FVector RingDirection = (EndRing.Center - StartRing.Center).GetSafeNormal();
-
-		// Now calculate the perpendicular direction to this vector that will point from Point
-		FVector PointToStartRing = (ExteriorPoint - StartRing.Center).GetSafeNormal();
-
-		// Check if the vectors are nearly parallel (dot product close to 1 or -1)
-		float DotProduct = FVector::DotProduct(RingDirection, PointToStartRing);
-		if (FMath::Abs(DotProduct) > 0.9999f) {
-			FVector FallbackDirection = FVector::CrossProduct(RingDirection, FVector(1, 0, 0)).GetSafeNormal();
-
-			if (FallbackDirection.IsZero()) {
-				FallbackDirection = FVector::CrossProduct(RingDirection, FVector(0, 1, 0)).GetSafeNormal();
-			}
-
-			return FallbackDirection;
-		}
-
-		// Cross product to find the perpendicular direction
-		FVector PerpendicularDirection = FVector::CrossProduct(RingDirection, PointToStartRing).GetSafeNormal();
-
-		return PerpendicularDirection;
 	}
 
 	void OrderSquareIntersectionConnections(FTwoTubeIntersectionData& TubeIntersectionData) {
@@ -1304,28 +1045,6 @@ namespace DoobGeometryUtils {
 		TubeIntersectionData.IntersectionSquare.TopLeftVertices = TempTopLeftSquareVertices;
 	}
 
-	FVector MakeDirectionPerpendicularToLine(const FVector& Direction, const FVector& Point1, const FVector& Point2) {
-		// Step 1: Compute the line vector
-		FVector LineVector = Point2 - Point1;
-		LineVector.Normalize(); // Ensure the line vector is normalized
-
-		// Step 2: Project the direction onto the line
-		float ProjectionScale = FVector::DotProduct(Direction, LineVector);
-		FVector Projection = ProjectionScale * LineVector;
-
-		// Step 3: Calculate the perpendicular component
-		FVector PerpendicularComponent = Direction - Projection;
-
-		// Step 4: Normalize the perpendicular component to return a direction vector
-		if (!PerpendicularComponent.IsNearlyZero()) {
-			return PerpendicularComponent.GetSafeNormal();
-		}
-		else {
-			// Handle edge case where the direction is parallel to the line
-			return FVector::ZeroVector; // Or some fallback
-		}
-	}
-
 	void RemoveVerticesByInterpolatedDirections(
 		FTwoTubeIntersectionData& TubeIntersectionData,
 		FIntersectionSquareData& IntersectionSquare
@@ -1338,12 +1057,6 @@ namespace DoobGeometryUtils {
 		// calc center of square
 		CalculateSquareCenter(IntersectionSquare);
 
-		// Log square corners and centers
-		UE_LOG(LogTemp, Log, TEXT("Square Center: %s"), *IntersectionSquare.Center.ToString());
-		for (int32 i = 0; i < 4; ++i) {
-			UE_LOG(LogTemp, Log, TEXT("Corner %d: %s"), i, *IntersectionSquare.Corners[i].ToString());
-		}
-
 		// get perpendicular directions for top and bottom rings
 		TArray<FVector> TopDirections, BottomDirections;
 		TopDirections.Add((IntersectionSquare.Corners[3] - TubeIntersectionData.MTAboveIntersectionRing.Center).GetSafeNormal());
@@ -1351,10 +1064,6 @@ namespace DoobGeometryUtils {
 
 		BottomDirections.Add((IntersectionSquare.Corners[0] - TubeIntersectionData.MTBelowIntersectionRing.Center).GetSafeNormal());
 		BottomDirections.Add((IntersectionSquare.Corners[1] - TubeIntersectionData.MTBelowIntersectionRing.Center).GetSafeNormal());
-
-		// Log directions
-		UE_LOG(LogTemp, Log, TEXT("TopDirections: %s, %s"), *TopDirections[0].ToString(), *TopDirections[1].ToString());
-		UE_LOG(LogTemp, Log, TEXT("BottomDirections: %s, %s"), *BottomDirections[0].ToString(), *BottomDirections[1].ToString());
 
 		FRingData TempTopRing = TubeIntersectionData.MTAboveIntersectionRing;
 		TempTopRing.Vertices.Empty();
@@ -1373,10 +1082,6 @@ namespace DoobGeometryUtils {
 			FVector Normal = FVector::CrossProduct(TopDirections[0], TopDirections[1]).GetSafeNormal(); // Normal of the plane
 			bool IsBetween = FVector::DotProduct(Normal, FVector::CrossProduct(TopDirections[0], VertexDirection)) >= 0 &&
 				FVector::DotProduct(Normal, FVector::CrossProduct(VertexDirection, TopDirections[1])) >= 0;
-
-			// Log vertex direction and decision
-			UE_LOG(LogTemp, Log, TEXT("Vertex: %s, Direction: %s, IsBetween: %d"),
-				*Vertex.ToString(), *VertexDirection.ToString(), IsBetween);
 
 			if (!IsBetween) {
 				if (!Corner3Added) {
@@ -1418,10 +1123,6 @@ namespace DoobGeometryUtils {
 			FVector Normal = FVector::CrossProduct(BottomDirections[0], BottomDirections[1]).GetSafeNormal(); // Normal of the plane
 			bool IsBetween = FVector::DotProduct(Normal, FVector::CrossProduct(BottomDirections[0], VertexDirection)) >= 0 &&
 				FVector::DotProduct(Normal, FVector::CrossProduct(VertexDirection, BottomDirections[1])) >= 0;
-
-			// Log vertex direction and decision
-			UE_LOG(LogTemp, Log, TEXT("Vertex: %s, Direction: %s, IsBetween: %d"),
-				*Vertex.ToString(), *VertexDirection.ToString(), IsBetween);
 
 			if (!IsBetween) {
 				if (!Corner0Added) {
@@ -1479,11 +1180,6 @@ namespace DoobGeometryUtils {
 			FVector InterpolatedDirection1 = FMath::Lerp(BottomDirections[0], TopDirections[0], BlendFactor).GetSafeNormal();
 			FVector InterpolatedDirection2 = FMath::Lerp(BottomDirections[1], TopDirections[1], BlendFactor).GetSafeNormal();
 
-			// Log interpolated directions
-			UE_LOG(LogTemp, Log, TEXT("Ring Center: %s, BlendFactor: %f, Interpolated Directions: %s, %s"),
-				*Ring.Center.ToString(), BlendFactor, *InterpolatedDirection1.ToString(), *InterpolatedDirection2.ToString());
-
-
 			FRingData ModifiedRing = Ring;
 			ModifiedRing.Vertices.Empty();
 
@@ -1501,10 +1197,6 @@ namespace DoobGeometryUtils {
 				FVector Normal = FVector::CrossProduct(InterpolatedDirection1, InterpolatedDirection2).GetSafeNormal(); // Normal of the plane
 				bool IsBetween = FVector::DotProduct(Normal, FVector::CrossProduct(InterpolatedDirection1, VertexDirection)) >= 0 &&
 					FVector::DotProduct(Normal, FVector::CrossProduct(VertexDirection, InterpolatedDirection2)) >= 0;
-
-				// Log vertex direction and decision
-				UE_LOG(LogTemp, Log, TEXT("Vertex: %s, Direction: %s, IsBetween: %d"),
-					*Vertex.ToString(), *VertexDirection.ToString(), IsBetween);
 
 				if (!IsBetween) {
 					if (!LeftRingConnection) {
@@ -1580,12 +1272,6 @@ namespace DoobGeometryUtils {
 
 		GetSquareAngles(IntersectionSquare);
 
-		UE_LOG(LogTemp, Log, TEXT("Square Vertices: %s, %s, %s, %s"), *IntersectionSquare.Corners[0].ToString(), *IntersectionSquare.Corners[1].ToString(), *IntersectionSquare.Corners[2].ToString(), *IntersectionSquare.Corners[3].ToString());
-		UE_LOG(LogTemp, Log, TEXT("Square Center: %s"), *IntersectionSquare.Center.ToString());
-		for (int32 i = 0; i < IntersectionSquare.Angles.Num(); ++i) {
-			UE_LOG(LogTemp, Log, TEXT("Angle %d: %f"), i, IntersectionSquare.Angles[i]);
-		}
-
 		FRingData MainTubeTopRing = TubeIntersectionData.MTAboveIntersectionRing;
 		FRingData MainTubeBottomRing = TubeIntersectionData.MTBelowIntersectionRing;
 
@@ -1617,9 +1303,6 @@ namespace DoobGeometryUtils {
 				if (!IsVertexInsideSquareAngle(Vertex, IntersectionSquare)) {
 					// keep vertices outside the angular range
 					ModifiedRing.Vertices.Add(Vertex);
-				}
-				else {
-					UE_LOG(LogTemp, Log, TEXT("Vertex Removed From Tube Vertex: %s"), *Vertex.ToString());
 				}
 			}
 
@@ -1666,10 +1349,6 @@ namespace DoobGeometryUtils {
 		for (const FVector& Vertex : TubeIntersectionData.MTAboveIntersectionRing.Vertices) {
 			if (!IsVertexInsideSquareAngle(Vertex, IntersectionSquare)) {
 				TempTopRing.Vertices.Add(Vertex);
-				UE_LOG(LogTemp, Log, TEXT("Vertex added to Top Ring: %s"), *Vertex.ToString());
-			}
-			else {
-				UE_LOG(LogTemp, Log, TEXT("Vertex removed from Top Ring: %s"), *Vertex.ToString());
 			}
 		}
 
@@ -1677,10 +1356,6 @@ namespace DoobGeometryUtils {
 		for (const FVector& Vertex : TubeIntersectionData.MTBelowIntersectionRing.Vertices) {
 			if (!IsVertexInsideSquareAngle(Vertex, IntersectionSquare)) {
 				TempBottomRing.Vertices.Add(Vertex);
-				UE_LOG(LogTemp, Log, TEXT("Vertex added to Bottom Ring: %s"), *Vertex.ToString());
-			}
-			else {
-				UE_LOG(LogTemp, Log, TEXT("Vertex removed from Bottom Ring: %s"), *Vertex.ToString());
 			}
 		}
 
@@ -1749,189 +1424,6 @@ namespace DoobGeometryUtils {
 	}
 
 	// -------------------------------------------------------- need to build a test and check this part end -----------------------------------------------------------------------//
-
-	FPlaneEquation::FPlaneEquation()
-		: Normal(), D() {
-	}
-
-	FPlaneEquation::FPlaneEquation(const FVector& InNormal, float InD)
-		: Normal(InNormal), D(InD) {
-	}
-
-	FPlaneEquation CalculatePlaneFromRings(const FRingData& RingA, const FRingData& RingB) {
-		// calc teh direction vector between the centers of the 2 rings
-		FVector DirectionBetweenRings = (RingB.Center - RingA.Center).GetSafeNormal();
-
-		// Compute the slope adjustment vector based on the radius difference
-		float RadiusDifference = RingB.Radius - RingA.Radius;
-		FVector SlopeAdjustment = RadiusDifference * DirectionBetweenRings;
-
-		// adjust the normal of RingA to account for the slope
-		FVector AdjustedNormalA = (RingA.Normal + SlopeAdjustment).GetSafeNormal();
-
-		// compute the plane normal by taking the cross product of DirectionBetweenRings and RingA's normal
-		FVector PlaneNormal = FVector::CrossProduct(DirectionBetweenRings, AdjustedNormalA).GetSafeNormal();
-
-		// calculate the D value for the plane equation, adjust for shifted center
-		FVector AdjustedCenter = RingA.Center + SlopeAdjustment;
-		float D = FVector::DotProduct(PlaneNormal, AdjustedCenter);
-
-		return FPlaneEquation(PlaneNormal, D);
-	}
-
-	bool CalculateIntersectionWithPlane(
-		const FPlaneEquation& Plane,
-		const FVector& RayOrigin,
-		const FVector& RayDirection,
-		FVector& OutIntersectionPoint
-	) {
-		// calc the dot product of the plane's normal and the ray direction
-		float NDotD = FVector::DotProduct(Plane.Normal, RayDirection);
-
-		float Numerator = -(FVector::DotProduct(Plane.Normal, RayOrigin) + Plane.D);
-
-		// check if the ray is parallel to the plane
-		if (FMath::IsNearlyZero(NDotD)) {
-			float DistanceFromPlane = -Numerator;
-
-			// check if the ray origin lies on the plane
-			if (FMath::IsNearlyZero(DistanceFromPlane)) {
-				OutIntersectionPoint = RayOrigin; // orign is an intersection point
-				return true;
-			}
-
-			return false; // no intersection, ray parallel to the plane
-		}
-
-		// calc t, the parameter of the ray at the intersection point
-		float t = Numerator / NDotD;
-
-		// if t < 0, intersection is behind the ray origin
-		if (t < 0.0f) {
-			return false; // no intersect the ray does not reach the plane
-		}
-
-		// compute the intersection point using the ray equation
-		OutIntersectionPoint = RayOrigin + t * RayDirection;
-
-		return true; // successfully calculated an intersection point 
-	}
-
-	bool PointInsideCircle(const FVector& Point, const FVector& Center, float Radius) {
-		// calc the squared distance between the point and the circle's center
-		float DistanceSquared = FVector::DistSquared(Point, Center);
-
-		// compare squared distance to squared radius for efficiency
-		return DistanceSquared <= FMath::Square(Radius);
-	}
-
-	void FilterPlanesAndLines(
-		const FTubeData& TubeA,
-		const FTubeData& TubeB,
-		TArray<TPair<int32, int32>>& OutPlaneIndicesA,
-		TArray<TPair<int32, int32>>& OutPlaneIndicesB,
-		TArray<int32>& OutLineIndicesA,
-		TArray<int32>& OutLineIndicesB
-	) {
-		// process TubeA planes and TubeB lines
-		for (int32 RingIndexA = 0; RingIndexA < TubeA.Rings.Num(); ++RingIndexA) {
-			const FRingData& RingA = TubeA.Rings[RingIndexA];
-			float RadiusA = RingA.Radius;
-			int32 NumSidesA = RingA.Vertices.Num();
-
-			for (int32 SideIndexA = 0; SideIndexA < NumSidesA; ++SideIndexA) {
-				FVector SideStartA = RingA.Vertices[SideIndexA];
-				FVector SideEndA = RingA.Vertices[(SideIndexA + 1) % NumSidesA];
-
-				// loop through TubeB lines
-				for (int32 LineIndexB = 0; LineIndexB < TubeB.Rings.Num() - 1; ++LineIndexB) {
-					const FRingData& CurrentRingB = TubeB.Rings[LineIndexB];
-					const FRingData& NextRingB = TubeB.Rings[LineIndexB + 1];
-					int32 NumVerticesB = CurrentRingB.Vertices.Num();
-
-					for (int32 VertexIndexB = 0; VertexIndexB < NumVerticesB; ++VertexIndexB) {
-						if (!CurrentRingB.Vertices.IsValidIndex(VertexIndexB) ||
-							!NextRingB.Vertices.IsValidIndex(VertexIndexB)) {
-							continue;
-						}
-
-						FVector LineStartB = CurrentRingB.Vertices[VertexIndexB];
-						FVector LineEndB = NextRingB.Vertices[VertexIndexB];
-
-						FVector PlaneNormal = (SideEndA - SideStartA).GetSafeNormal();
-						float PlaneD = FVector::DotProduct(SideStartA, PlaneNormal);
-
-						FVector LineDir = LineEndB - LineStartB;
-						float Denom = FVector::DotProduct(LineDir, PlaneNormal);
-
-						// Check for parallel lines
-						if (FMath::Abs(Denom) < KINDA_SMALL_NUMBER) {
-							continue;
-						}
-
-						// Calculate T (intersection point parameter)
-						float T = (PlaneD - FVector::DotProduct(LineStartB, PlaneNormal)) / Denom;
-
-						// Ensure T lies within [0, 1]
-						if (T < 0.0f || T > 1.0f) {
-							continue;
-						}
-
-						FVector IntersectionPoint = LineStartB + T * LineDir;
-						float DistanceToCenter = FVector::Dist(IntersectionPoint, SideStartA);
-
-						// Check if intersection point is within the ring's radius
-						if (DistanceToCenter <= RadiusA) {
-							TPair<int32, int32> PlaneIndexA(RingIndexA, SideIndexA);
-							if (!OutPlaneIndicesA.Contains(PlaneIndexA)) {
-								OutPlaneIndicesA.Add(PlaneIndexA);
-							}
-							if (!OutLineIndicesB.Contains(LineIndexB)) {
-								OutLineIndicesB.Add(LineIndexB);
-							}
-						}
-					}
-				}
-			}
-		}
-
-		// process TubeB planes and TubeA lines
-		for (int32 RingIndexB = 0; RingIndexB < TubeB.Rings.Num(); ++RingIndexB) {
-			const FRingData& RingB = TubeB.Rings[RingIndexB];
-			float RadiusB = RingB.Radius;
-			int32 NumSidesB = RingB.Vertices.Num();
-
-			for (int32 SideIndexB = 0; SideIndexB < NumSidesB; ++SideIndexB) {
-				FVector SideStartB = RingB.Vertices[SideIndexB];
-				FVector SideEndB = RingB.Vertices[(SideIndexB + 1) % NumSidesB];
-
-				// loop through TubeA lines
-				for (int32 LineIndexA = 0; LineIndexA < TubeA.Rings.Num(); ++LineIndexA) {
-					const FRingData& RingA = TubeA.Rings[LineIndexA];
-					int32 NumVerticesA = RingA.Vertices.Num();
-
-					for (int32 VertexIndexA = 0; VertexIndexA < NumVerticesA; ++VertexIndexA) {
-						FVector LineStartA = RingA.Vertices[VertexIndexA];
-						FVector LineEndA = RingA.Vertices[(VertexIndexA + 1) % NumVerticesA];
-
-						float DistanceStart = FVector::PointPlaneDist(LineStartA, SideStartB, SideEndB - SideStartB);
-						float DistanceEnd = FVector::PointPlaneDist(LineEndA, SideStartB, SideEndB - SideStartB);
-
-
-						if (FMath::Abs(DistanceStart) <= RadiusB || FMath::Abs(DistanceStart) <= RadiusB) {
-							TPair<int32, int32> PlaneIndexB(RingIndexB, SideIndexB);
-							if (!OutPlaneIndicesB.Contains(PlaneIndexB)) {
-								OutPlaneIndicesB.Add(PlaneIndexB);
-							}
-							if (!OutLineIndicesA.Contains(LineIndexA)) {
-								OutLineIndicesA.Add(LineIndexA);
-							}
-						}
-					}
-				}
-			}
-		}
-	}
 
 	TArray<FVector> GenerateIntersectionCurve(
 		const DoobProfileUtils::F2DProfile& MainProfile,

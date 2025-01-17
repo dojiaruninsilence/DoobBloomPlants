@@ -222,11 +222,8 @@ namespace DoobGeometryUtils {
 
     void FindIntersectionRingCardinalPoints(FIntersectionRingData& IntersectionRing, const FVector& StartCenter, const FVector& EndCenter);
 
-    FVector FindFrustumPerpendicularDirection(const FRingData& EndRing, const FRingData& StartRing, const FVector& ExteriorPoint);
-
     void OrderSquareIntersectionConnections(FTwoTubeIntersectionData& TubeIntersectionData);
 
-    FVector MakeDirectionPerpendicularToLine(const FVector& Direction, const FVector& Point1, const FVector& Point2);
     // --------------------------------------------------------if this works remove the other section ------------------------------------------------------//
     void RemoveVerticesByInterpolatedDirections(
         FTwoTubeIntersectionData& TubeIntersectionData,
@@ -251,89 +248,6 @@ namespace DoobGeometryUtils {
 
     // ------------------------------------------------------ Planes and Lines Intersections ------------------------------------------------------------ //
 
-    /**
-     * Represents a plane equation defined by a normal vector and a scalar D.
-     */
-    struct FPlaneEquation {
-        FVector Normal; ///< The normal vector of the plane.
-        float D; ///< The scalar D in the plane equation.
-
-        /**
-         * Default constructor. Initializes a zero plane.
-         */
-        FPlaneEquation();
-
-        /**
-         * Constructs a plane from a normal vector and a scalar D.
-         * @param InNormal The normal vector of the plane.
-         * @param InD The scalar D in the plane equation.
-         */
-        FPlaneEquation(const FVector& InNormal, float InD);
-
-        // possibly add methods for point containment or intersection checks here
-    };
-
-    /**
-     * Calculates a plane equation using two rings.
-     * @param RingA The first ring.
-     * @param RingB The second ring.
-     * @return The calculated plane equation.
-     */
-    FPlaneEquation CalculatePlaneFromRings(const FRingData& RingA, const FRingData& RingB);
-
-    /**
-     * Calculates the intersection of a ray with a plane.
-     * @param Plane The plane equation.
-     * @param RayOrigin The origin of the ray.
-     * @param RayDirection The direction of the ray.
-     * @param OutIntersectionPoint The calculated intersection point, if any.
-     * @return True if the intersection is found; false otherwise.
-     */
-    bool CalculateIntersectionWithPlane(
-        const FPlaneEquation& Plane,
-        const FVector& RayOrigin,
-        const FVector& RayDirection,
-        FVector& OutIntersectionPoint
-    );
-
-    /**
-     * Checks if a point lies within or on the boundary of a circle.
-     * @param Point The point to check.
-     * @param Center The center of the circle.
-     * @param Radius The radius of the circle.
-     * @return True if the point is inside or on the circle; false otherwise.
-     */
-    bool PointInsideCircle(const FVector& Point, const FVector& Center, float Radius);
-
-    /**
-     * Filters and identifies planes and lines that potentially intersect between two tubes.
-     *
-     * This function determines the relevant planes and lines in each tube that are within
-     * the range of potential intersections. It outputs indices of the intersecting planes
-     * and lines for both TubeA and TubeB. The filtering accounts for the geometry of the
-     * tubes, including their positions, radii, and alignment.
-     *
-     * @param TubeA The first tube, containing its rings, center positions, and radii.
-     * @param TubeB The second tube, containing its rings, center positions, and radii.
-     * @param OutPlaneIndicesA A list of index pairs representing planes in TubeA that
-     *                         are near potential intersection points. Each pair indicates
-     *                         a plane defined by two rings in TubeA.
-     * @param OutPlaneIndicesB A list of index pairs representing planes in TubeB that
-     *                         are near potential intersection points. Each pair indicates
-     *                         a plane defined by two rings in TubeB.
-     * @param OutLineIndicesA A list of indices representing lines in TubeA that are
-     *                        near potential intersection planes of TubeB.
-     * @param OutLineIndicesB A list of indices representing lines in TubeB that are
-     *                        near potential intersection planes of TubeA.
- */
-    void FilterPlanesAndLines(
-        const FTubeData& TubeA,
-        const FTubeData& TubeB,
-        TArray<TPair<int32, int32>>& OutPlaneIndicesA,
-        TArray<TPair<int32, int32>>& OutPlaneIndicesB,
-        TArray<int32>& OutLineIndicesA,
-        TArray<int32>& OutLineIndicesB
-    );
 
     // ------------------------------------------------------ Shape Intersections ------------------------------------------------------------ //
 
