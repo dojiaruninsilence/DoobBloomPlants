@@ -84,8 +84,10 @@ namespace DoobGeometryUtils {
         FRingData MTBelowIntersectionRingPartial;
         FTubeData LateralTubeIntersectionRings;
         FRingData LateralTubeFirstFullRing;
+        FTubeData LateralTubeRemovedVertices;
         TArray<FVector> AllVertices;
         TArray<int32> Triangles;
+        TArray<FRingData> MainTubePartialRings;
     };
 
     /**
@@ -222,6 +224,8 @@ namespace DoobGeometryUtils {
 
     void FindIntersectionRingCardinalPoints(FIntersectionRingData& IntersectionRing, const FVector& StartCenter, const FVector& EndCenter);
 
+    int32 FindVertexIndex(const TArray<FVector>& Vertices, const FVector& TargetVertex);
+
     void OrderSquareIntersectionConnections(FTwoTubeIntersectionData& TubeIntersectionData);
 
     // --------------------------------------------------------if this works remove the other section ------------------------------------------------------//
@@ -239,6 +243,8 @@ namespace DoobGeometryUtils {
         FTwoTubeIntersectionData& TubeIntersectionData,
         FIntersectionSquareData& IntersectionSquare
     );
+
+    void RemoveDuplicateVertices(TArray<FVector>& Vertices, float Tolerance = 0.01f);
 
     void CalculateSquareCenter(FIntersectionSquareData& IntersectionSquare);
 
