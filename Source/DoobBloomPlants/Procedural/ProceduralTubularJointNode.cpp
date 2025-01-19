@@ -22,10 +22,10 @@ AProceduralTubularJointNode::AProceduralTubularJointNode()
 	bIsMainTubeClosed = true;
 	bIsLateralTubeClosed = true;
 
-	MainTubeProfile = DoobProfileUtils::GenerateEggShapedCylinderProfile(MainTubeSegments, 0.0f, 300.0f, 100.0f, 0.35f);
+	//MainTubeProfile = DoobProfileUtils::GenerateEggShapedCylinderProfile(MainTubeSegments, 0.0f, 300.0f, 100.0f, 0.35f);
 
 	// Generate a default circular profile
-	MainTubeProfile = DoobProfileUtils::GenerateLinearProfile(MainTubeSegments, 200.0f, 200.0f);
+	MainTubeProfile = DoobProfileUtils::GenerateLinearProfile(MainTubeSegments, 200.0f, 100.0f);
 	MainTubeTransform = FTransform::Identity;
 
 	LateralTubeProfile = DoobProfileUtils::GenerateLinearProfile(LateralTubeSegments, 100.0f, 100.0f);

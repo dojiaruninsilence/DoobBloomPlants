@@ -252,6 +252,17 @@ namespace DoobGeometryUtils {
 
     bool IsVertexInsideSquareAngle(const FVector& Vertex, const FIntersectionSquareData& IntersectionSquare);
 
+    bool IsPointOnLine(const FVector& LineStart, const FVector& LineEnd, const FVector& Point, float Tolerance = KINDA_SMALL_NUMBER);
+
+    /*bool DoLinesIntersect(
+        const FVector& Line1Start,
+        const FVector& Line1End,
+        const FVector& Line2Start,
+        const FVector& Line2End,
+        FVector& OutIntersectionPoint,
+        float Tolerance = KINDA_SMALL_NUMBER
+    );*/
+
     // ------------------------------------------------------ Planes and Lines Intersections ------------------------------------------------------------ //
 
 

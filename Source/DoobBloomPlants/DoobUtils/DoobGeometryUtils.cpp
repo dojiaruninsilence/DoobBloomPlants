@@ -217,8 +217,6 @@ namespace DoobGeometryUtils {
 			TubeIntersectionData.IntersectionRing.CardinalIndices[0]
 		);
 
-		UE_LOG(LogTemp, Log, TEXT("ReorderedIntersection.Num: %d"), ReorderedIntersection.Num());
-
 		int32 StartIndex = FindVertexIndex(ReorderedIntersection, TubeIntersectionData.IntersectionRing.CardinalVertices[1]) - 1;
 		int32 EndIndexAlt = FindVertexIndex(ReorderedIntersection, TubeIntersectionData.IntersectionRing.CardinalVertices[3]) + 1;
 
@@ -258,18 +256,10 @@ namespace DoobGeometryUtils {
 			FirstLateralIntersectionRing
 		);
 
-		// Log all vertices in ReorderedIntersection before the loop
-		UE_LOG(LogTemp, Warning, TEXT("Logging all vertices in ReorderedIntersection:"));
-		for (const FVector& Vertex : ReorderedIntersection)
-		{
-			UE_LOG(LogTemp, Log, TEXT("Vertex: X=%f, Y=%f, Z=%f"), Vertex.X, Vertex.Y, Vertex.Z);
-		}
-
 		FirstLateralIntersectionRing.Vertices.Empty();
 
 		for (int32 i = StartIndex; i <= EndIndexAlt; ++i) {
-			FVector VertexToAdd = ReorderedIntersection[i];
-			UE_LOG(LogTemp, Log, TEXT("Index: %d, Vertex: X=%f, Y=%f, Z=%f"), i, VertexToAdd.X, VertexToAdd.Y, VertexToAdd.Z);
+			FVector VertexToAdd = ReorderedIntersection[i];\
 
 			FirstLateralIntersectionRing.Vertices.Add(VertexToAdd);
 
@@ -327,6 +317,10 @@ namespace DoobGeometryUtils {
 			
 			TubeIntersectionData.LateralTubeFirstFullRing = CurrentLateralIntersectionRing;
 
+			FRingData TempNextStartRing;
+			FRingData TempNextEndRing;
+			FVector TempNextVertex;
+
 			for (int32 j = 0; j < PreviousLateralIntersectionRing.Vertices.Num(); ++j) {
 				FRingData TempCurrentStartRing;
 				FRingData TempCurrentEndRing;
@@ -336,7 +330,43 @@ namespace DoobGeometryUtils {
 
 				FVector TempCurrentVertex = FindIntersectionOnNewRing(CurrentLateralIntersectionRing.Vertices, TempCurrentDirection, CurrentLateralIntersectionRing.Center, PreviousLateralIntersectionRing.Vertices[j]);
 
-				TempCurrentVertices.Add(TempCurrentVertex);
+				/*FVector TempCurrentVertex = TempNextVertex;*/
+
+				FRingData CurrentMainTubeStartRing;
+				FRingData CurrentMainTubeEndRing;
+
+				FindSegmentForPoint(TempCurrentVertex, TubeIntersectionData.MainTube, CurrentMainTubeStartRing, CurrentMainTubeEndRing);
+
+				int32 TempNextIndex = (j + 1) % PreviousLateralIntersectionRing.Vertices.Num();
+				int32 TempPrevIndex = (j - 1) % PreviousLateralIntersectionRing.Vertices.Num();
+
+				bool IsInsideFrustum = IsPointInsideFrustum(CurrentMainTubeStartRing, CurrentMainTubeEndRing, TempCurrentVertex);
+				bool IsAlongLine = IsPointOnLine(PreviousLateralIntersectionRing.Vertices[j], PreviousLateralIntersectionRing.Vertices[TempNextIndex], TempCurrentVertex) ||
+					IsPointOnLine(PreviousLateralIntersectionRing.Vertices[TempPrevIndex], PreviousLateralIntersectionRing.Vertices[j], TempCurrentVertex);
+
+				if (IsInsideFrustum && !IsAlongLine) {
+					TempCurrentVertices.Add(PreviousLateralIntersectionRing.Vertices[j]);
+					UE_LOG(LogTemp, Log, TEXT("Vertex in main tube: %s"), *PreviousLateralIntersectionRing.Vertices[j].ToString());
+				}
+				else {
+					TempCurrentVertices.Add(TempCurrentVertex);
+					UE_LOG(LogTemp, Log, TEXT("Vertex NOT in main tube: %s"), *PreviousLateralIntersectionRing.Vertices[j].ToString());
+				}
+
+				/*TempCurrentVertices.Add(TempCurrentVertex);*/
+
+				
+				FindSegmentForPoint(PreviousLateralIntersectionRing.Vertices[TempNextIndex], TubeIntersectionData.LateralTube, TempNextStartRing, TempNextEndRing);
+				FVector TempNextCenterlinePoint = CalculateCenterLinePoint(PreviousLateralIntersectionRing.Vertices[TempNextIndex], TempNextStartRing, TempNextEndRing);
+				FVector TempNextDirection = (PreviousLateralIntersectionRing.Vertices[TempNextIndex] - TempNextCenterlinePoint).GetSafeNormal();
+
+				TempNextVertex = FindIntersectionOnNewRing(CurrentLateralIntersectionRing.Vertices, TempNextDirection, CurrentLateralIntersectionRing.Center, PreviousLateralIntersectionRing.Vertices[TempNextIndex]);
+
+				/*FVector TempLineIntersectionVertex;
+				if (DoLinesIntersect(TempCurrentVertex, TempNextVertex, PreviousLateralIntersectionRing.Vertices[j], PreviousLateralIntersectionRing.Vertices[TempNextIndex], TempLineIntersectionVertex)) {
+					TempCurrentVertices.Add(TempLineIntersectionVertex);
+					UE_LOG(LogTemp, Log, TEXT("Lines intersect at vertex: %s"), *TempLineIntersectionVertex.ToString());
+				}*/
 			}
 
 			CurrentLateralIntersectionRing.Vertices = TempCurrentVertices;
@@ -348,16 +378,6 @@ namespace DoobGeometryUtils {
 
 			TubeIntersectionData.LateralTubeIntersectionRings.Rings.Add(PreviousLateralIntersectionRing);
 			TubeIntersectionData.LateralTubeIntersectionRings.Rings.Add(CurrentLateralIntersectionRing);
-
-			UE_LOG(LogTemp, Log, TEXT("Lateral intersection ring Iteration: %d, Current Ring Vertices Num: %d, Previous Ring Vertices Num: %d"), i, CurrentLateralIntersectionRing.Vertices.Num(), PreviousLateralIntersectionRing.Vertices.Num());
-			for (const FVector& Vertex : CurrentLateralIntersectionRing.Vertices)
-			{
-				UE_LOG(LogTemp, Log, TEXT("Current Vertex: X=%f, Y=%f, Z=%f"), Vertex.X, Vertex.Y, Vertex.Z);
-			}
-			for (const FVector& Vertex : PreviousLateralIntersectionRing.Vertices)
-			{
-				UE_LOG(LogTemp, Log, TEXT("Previous Vertex: X=%f, Y=%f, Z=%f"), Vertex.X, Vertex.Y, Vertex.Z);
-			}
 		}
 	}
 
@@ -1727,6 +1747,79 @@ namespace DoobGeometryUtils {
 		// check if the vertex angle is within the square's angle range
 		return VertexAngle >= SortedAngles[0] && VertexAngle <= SortedAngles[1];
 	}
+
+	bool IsPointOnLine(const FVector& LineStart, const FVector& LineEnd, const FVector& Point, float Tolerance) {
+		// Check if the point is the same as the start or end points
+		if (FVector::DistSquared(Point, LineStart) < FMath::Square(Tolerance) ||
+			FVector::DistSquared(Point, LineEnd) < FMath::Square(Tolerance)) {
+			return true;
+		}
+
+		// Calculate direction vectors
+		FVector LineVector = LineEnd - LineStart;
+		FVector PointVector = Point - LineStart;
+
+		// Check if the point is collinear with the line
+		FVector CrossProduct = FVector::CrossProduct(LineVector, PointVector);
+		if (!CrossProduct.IsNearlyZero(Tolerance)) {
+			return false; // Point is not on the line
+		}
+
+		// Check if the point lies between the start and end points
+		float DotProduct = FVector::DotProduct(LineVector, PointVector);
+		if (DotProduct < 0 || DotProduct > LineVector.SizeSquared()) {
+			return false; // Point is outside the segment
+		}
+
+		return true; // Point is on the line segment
+	}
+
+	/*bool DoLinesIntersect(
+		const FVector& Line1Start,
+		const FVector& Line1End,
+		const FVector& Line2Start,
+		const FVector& Line2End,
+		FVector& OutIntersectionPoint,
+		float Tolerance
+	) {
+		// Calculate direction vectors for the lines
+		FVector Dir1 = Line1End - Line1Start;
+		FVector Dir2 = Line2End - Line2Start;
+
+		// Check if the lines are parallel
+		FVector CrossDir = FVector::CrossProduct(Dir1, Dir2);
+		if (CrossDir.SizeSquared() < Tolerance) {
+			return false; // Lines are parallel, no intersection
+		}
+
+		// Solve for intersection parameters (s, t) using a system of equations
+		FVector LineDiff = Line2Start - Line1Start;
+		float A = FVector::DotProduct(LineDiff, FVector::CrossProduct(Dir2, CrossDir));
+		float B = FVector::DotProduct(Dir1, CrossDir);
+
+		if (FMath::Abs(B) < Tolerance) {
+			return false; // Lines are coplanar but do not intersect
+		}
+
+		float T = A / B;
+		if (T < 0.0f || T > 1.0f) {
+			return false; // Intersection is outside the bounds of Line1
+		}
+
+		FVector Intersection = Line1Start + T * Dir1;
+
+		// Check if Intersection is within the bounds of Line2
+		FVector DiffToIntersection = Intersection - Line2Start;
+		float ParamOnLine2 = FVector::DotProduct(DiffToIntersection, Dir2) / Dir2.SizeSquared();
+
+		if (ParamOnLine2 < 0.0f || ParamOnLine2 > 1.0f) {
+			return false; // Intersection is outside the bounds of Line2
+		}
+
+		// Valid intersection
+		OutIntersectionPoint = Intersection;
+		return true;
+	}*/
 
 	// -------------------------------------------------------- need to build a test and check this part end -----------------------------------------------------------------------//
 
