@@ -16,13 +16,13 @@ AProceduralTubularJointNode::AProceduralTubularJointNode()
 
 	// intialize properties
 	MainTubeSegments = 20;
-	LateralTubeSegments = 2;
+	LateralTubeSegments = 20;
 	MainTubeRadius = 50.0f;
 	LateralTubeRadius = 25.0f;
 	bIsMainTubeClosed = true;
 	bIsLateralTubeClosed = true;
 
-	//MainTubeProfile = DoobProfileUtils::GenerateEggShapedCylinderProfile(MainTubeSegments, 0.0f, 300.0f, 100.0f, 0.35f);
+	MainTubeProfile = DoobProfileUtils::GenerateEggShapedCylinderProfile(MainTubeSegments, 0.0f, 300.0f, 100.0f, 0.35f);
 
 	// Generate a default circular profile
 	MainTubeProfile = DoobProfileUtils::GenerateLinearProfile(MainTubeSegments, 200.0f, 200.0f);
@@ -89,14 +89,14 @@ void AProceduralTubularJointNode::BuildMainTube() {
 	TubeIntersection.LateralTubeRemovedVertices = TubeIntersection.LateralTube;
 	DoobGeometryUtils::RemoveInternalVertices(TubeIntersection.MainTube, TubeIntersection.LateralTubeRemovedVertices);
 
-	for (int32 i = 0; i < TubeIntersection.LateralTubeRemovedVertices.Rings.Num(); ++i) {
-		for (int32 j = 0; j < TubeIntersection.LateralTubeRemovedVertices.Rings[i].Vertices.Num() - 1; ++j) {
-			FVector CurrentVertex = GetActorTransform().TransformPosition(TubeIntersection.LateralTubeRemovedVertices.Rings[i].Vertices[j]);
-			FVector NextVertex = GetActorTransform().TransformPosition(TubeIntersection.LateralTubeRemovedVertices.Rings[i].Vertices[j + 1]);
-			DrawDebugLine(World, CurrentVertex, NextVertex, FColor::Red, true, 0.0f, 0, 1.0f);
-			//UE_LOG(LogTemp, Log, TEXT("Intersection Remaining Ring Debug iteration: %d, Current Vertex: (X:%f/Y:%f/Z:%f), Next Vertex: (X:%f/Y:%f/Z:%f)"), i, CurrentVertex.X, CurrentVertex.Y, CurrentVertex.Z, NextVertex.X, NextVertex.Y, NextVertex.Z);
-		}
-	}
+	//for (int32 i = 0; i < TubeIntersection.LateralTubeRemovedVertices.Rings.Num(); ++i) {
+	//	for (int32 j = 0; j < TubeIntersection.LateralTubeRemovedVertices.Rings[i].Vertices.Num() - 1; ++j) {
+	//		FVector CurrentVertex = GetActorTransform().TransformPosition(TubeIntersection.LateralTubeRemovedVertices.Rings[i].Vertices[j]);
+	//		FVector NextVertex = GetActorTransform().TransformPosition(TubeIntersection.LateralTubeRemovedVertices.Rings[i].Vertices[j + 1]);
+	//		DrawDebugLine(World, CurrentVertex, NextVertex, FColor::Red, true, 0.0f, 0, 1.0f);
+	//		//UE_LOG(LogTemp, Log, TEXT("Intersection Remaining Ring Debug iteration: %d, Current Vertex: (X:%f/Y:%f/Z:%f), Next Vertex: (X:%f/Y:%f/Z:%f)"), i, CurrentVertex.X, CurrentVertex.Y, CurrentVertex.Z, NextVertex.X, NextVertex.Y, NextVertex.Z);
+	//	}
+	//}
 
 	for (int32 i = 0; i < TubeIntersection.LateralTubeIntersectionRings.Rings.Num(); ++i) {
 		for (int32 j = 0; j < TubeIntersection.LateralTubeIntersectionRings.Rings[i].Vertices.Num() - 1; ++j) {
@@ -143,7 +143,7 @@ void AProceduralTubularJointNode::BuildMainTube() {
 		for (int32 j = 0; j < TubeIntersection.MainTubePartialRings[i].Vertices.Num() - 1; ++j) {
 			FVector CurrentVertex = GetActorTransform().TransformPosition(TubeIntersection.MainTubePartialRings[i].Vertices[j]);
 			FVector NextVertex = GetActorTransform().TransformPosition(TubeIntersection.MainTubePartialRings[i].Vertices[j + 1]);
-			DrawDebugLine(World, CurrentVertex, NextVertex, FColor::Green, true, 0.0f, 0, 1.0f);
+			DrawDebugLine(World, CurrentVertex, NextVertex, FColor::Red, true, 0.0f, 0, 1.0f);
 			//UE_LOG(LogTemp, Log, TEXT("Intersection Remaining Ring Debug iteration: %d, Current Vertex: (X:%f/Y:%f/Z:%f), Next Vertex: (X:%f/Y:%f/Z:%f)"), i, CurrentVertex.X, CurrentVertex.Y, CurrentVertex.Z, NextVertex.X, NextVertex.Y, NextVertex.Z);
 		}
 	}
