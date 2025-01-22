@@ -6,6 +6,7 @@
 #include "DrawDebugHelpers.h"
 
 //#include "DoobProfileUtils.h"
+#include "DoobContainerUtils.h"
 
 namespace DoobGeometryUtils {
 	void GenerateRing(FVector Center, FVector Direction, FVector UpVector, float Radius, int32 NumSides, FRingData& RingData) {
@@ -212,7 +213,7 @@ namespace DoobGeometryUtils {
 		TubeIntersectionData.LateralTubeIntersectionRings.Rings.Empty();
 
 		// create temp ring to reorder ring to north point
-		TArray<FVector> ReorderedIntersection = ReorderedArray(
+		TArray<FVector> ReorderedIntersection = DoobContainerUtils::ReorderedArray(
 			TubeIntersectionData.IntersectionRing.CombinedVertices,
 			TubeIntersectionData.IntersectionRing.CardinalIndices[0]
 		);
@@ -236,7 +237,7 @@ namespace DoobGeometryUtils {
 
 		if (ClosestVertToEndIndex > 0) {
 			ReorderedIntersection.Empty();
-			ReorderedIntersection = ReorderedArray(
+			ReorderedIntersection = DoobContainerUtils::ReorderedArray(
 				TubeIntersectionData.IntersectionRing.CombinedVertices,
 				TubeIntersectionData.IntersectionRing.CardinalIndices[2]
 			);
@@ -1337,7 +1338,7 @@ namespace DoobGeometryUtils {
 		TArray<FVector> TempTopLeftSquareVertices;
 		TArray<FVector> TempTopRightSquareVertices;
 
-		TArray<FVector> ReorderedIntersection = ReorderedArray(
+		TArray<FVector> ReorderedIntersection = DoobContainerUtils::ReorderedArray(
 			TubeIntersectionData.IntersectionRing.CombinedVertices, 
 			TubeIntersectionData.IntersectionRing.CardinalIndices[0]
 		);
@@ -1702,7 +1703,7 @@ namespace DoobGeometryUtils {
 				}
 			}
 
-			TArray<FVector> TempModifiedVertices = ReorderedArray(TempTopRing.Vertices, indexCountFinal + 1);
+			TArray<FVector> TempModifiedVertices = DoobContainerUtils::ReorderedArray(TempTopRing.Vertices, indexCountFinal + 1);
 			FVector TempLastVertex = FindIntersectionOnRing(TubeIntersectionData.MTAboveIntersectionRing.Vertices, TopDirections[0], TubeIntersectionData.MTAboveIntersectionRing.Center);
 
 			ReorderedTopVertices.Add(TempTestVertex);
@@ -1710,7 +1711,7 @@ namespace DoobGeometryUtils {
 			ReorderedTopVertices.Add(TempLastVertex);
 		}
 		else {
-			ReorderedTopVertices = ReorderedArray(TempTopRing.Vertices, indexCountFinal);
+			ReorderedTopVertices = DoobContainerUtils::ReorderedArray(TempTopRing.Vertices, indexCountFinal);
 		}
 		//TempTopRing.Vertices.Add(IntersectionSquare.Corners[3]);
 
@@ -1772,7 +1773,7 @@ namespace DoobGeometryUtils {
 				}
 			}
 
-			TArray<FVector> TempModifiedVertices = ReorderedArray(TempBottomRing.Vertices, indexCountFinal + 1);
+			TArray<FVector> TempModifiedVertices = DoobContainerUtils::ReorderedArray(TempBottomRing.Vertices, indexCountFinal + 1);
 			FVector TempLastVertex = FindIntersectionOnRing(TubeIntersectionData.MTBelowIntersectionRing.Vertices, BottomDirections[0], TubeIntersectionData.MTBelowIntersectionRing.Center);
 
 			ReorderedBottomVertices.Add(TempTestVertex);
@@ -1780,7 +1781,7 @@ namespace DoobGeometryUtils {
 			ReorderedBottomVertices.Add(TempLastVertex);
 		}
 		else {
-			ReorderedBottomVertices = ReorderedArray(TempBottomRing.Vertices, indexCountFinal);
+			ReorderedBottomVertices = DoobContainerUtils::ReorderedArray(TempBottomRing.Vertices, indexCountFinal);
 		}
 
 		//TArray<FVector> ReorderedBottomVertices = ReorderedArray(TempBottomRing.Vertices, indexCountFinal);
@@ -1889,7 +1890,7 @@ namespace DoobGeometryUtils {
 					}
 				}
 
-				TArray<FVector> TempModifiedVertices = ReorderedArray(ModifiedRing.Vertices, indexCountFinal + 1);
+				TArray<FVector> TempModifiedVertices = DoobContainerUtils::ReorderedArray(ModifiedRing.Vertices, indexCountFinal + 1);
 				FVector TempLastVertex = FindIntersectionOnRing(Ring.Vertices, InterpolatedDirection1, Ring.Center);
 
 				ReorderedModifiedVertices.Add(TempTestVertex);
@@ -1897,7 +1898,7 @@ namespace DoobGeometryUtils {
 				ReorderedModifiedVertices.Add(TempLastVertex);
 			}
 			else {
-				ReorderedModifiedVertices = ReorderedArray(ModifiedRing.Vertices, indexCountFinal);
+				ReorderedModifiedVertices = DoobContainerUtils::ReorderedArray(ModifiedRing.Vertices, indexCountFinal);
 			}
 
 			//TArray<FVector> ReorderedModifiedVertices = ReorderedArray(ModifiedRing.Vertices, indexCountFinal);
@@ -1912,32 +1913,31 @@ namespace DoobGeometryUtils {
 	}
 
 	// ---------------------------------------------------------- need to add this to a container utils file ------------------------------------------------------------------//
-	TArray<FVector> ReorderedArray(const TArray<FVector>& OriginalArray, int32 StartIndex) {
-		// Make sure the start index is within bounds
-		if (StartIndex < 0 || StartIndex >= OriginalArray.Num())
-		{
-			return OriginalArray;  // Return the original array if the index is invalid
-		}
+	//TArray<FVector> ReorderedArray(const TArray<FVector>& OriginalArray, int32 StartIndex) {
+	//	// Make sure the start index is within bounds
+	//	if (StartIndex < 0 || StartIndex >= OriginalArray.Num())
+	//	{
+	//		return OriginalArray;  // Return the original array if the index is invalid
+	//	}
 
-		// Create the reordered array
-		TArray<FVector> Reordered;
+	//	// Create the reordered array
+	//	TArray<FVector> Reordered;
 
-		// Add the second part (from start index to the end)
-		for (int32 i = StartIndex; i < OriginalArray.Num(); ++i)
-		{
-			Reordered.Add(OriginalArray[i]);
-		}
+	//	// Add the second part (from start index to the end)
+	//	for (int32 i = StartIndex; i < OriginalArray.Num(); ++i)
+	//	{
+	//		Reordered.Add(OriginalArray[i]);
+	//	}
 
-		// Add the first part (from the beginning to the start index)
-		for (int32 i = 0; i < StartIndex; ++i)
-		{
-			Reordered.Add(OriginalArray[i]);
-		}
+	//	// Add the first part (from the beginning to the start index)
+	//	for (int32 i = 0; i < StartIndex; ++i)
+	//	{
+	//		Reordered.Add(OriginalArray[i]);
+	//	}
 
-		return Reordered;
-	}
+	//	return Reordered;
+	//}
 
-	// -------------------------------------------------------- need to build a test and check this part -----------------------------------------------------------------------//
 	void RemoveVerticesInsideSquareByAngle(
 		FTwoTubeIntersectionData& TubeIntersectionData,
 		FIntersectionSquareData& IntersectionSquare

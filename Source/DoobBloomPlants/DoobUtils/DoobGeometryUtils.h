@@ -255,7 +255,7 @@ namespace DoobGeometryUtils {
     );
 
     // ---------------------------------------------------------- need to add this to a container utils file ------------------------------------------------------------------//
-    TArray<FVector> ReorderedArray(const TArray<FVector>& OriginalArray, int32 StartIndex);
+    //TArray<FVector> ReorderedArray(const TArray<FVector>& OriginalArray, int32 StartIndex);
 
     // --------------------------------------------------------if this works remove the other section end ------------------------------------------------------//
 
