@@ -22,13 +22,15 @@ AProceduralTubularJointNode::AProceduralTubularJointNode()
 	bIsMainTubeClosed = true;
 	bIsLateralTubeClosed = true;
 
-	//MainTubeProfile = DoobProfileUtils::GenerateEggShapedCylinderProfile(MainTubeSegments, 0.0f, 300.0f, 100.0f, 0.35f);
+	MainTubeProfile = DoobProfileUtils::GenerateEggShapedCylinderProfile(MainTubeSegments, 0.0f, 300.0f, 100.0f, 0.35f);
+
+	LateralTubeProfile = DoobProfileUtils::GenerateEggShapedCylinderProfile(MainTubeSegments, 0.0f, 200.0f, 50.0f, 0.35f);
 
 	// Generate a default circular profile
-	MainTubeProfile = DoobProfileUtils::GenerateLinearProfile(MainTubeSegments, 200.0f, 100.0f);
+	//MainTubeProfile = DoobProfileUtils::GenerateLinearProfile(MainTubeSegments, 200.0f, 100.0f);
 	MainTubeTransform = FTransform::Identity;
 
-	LateralTubeProfile = DoobProfileUtils::GenerateLinearProfile(LateralTubeSegments, 100.0f, 100.0f);
+	//LateralTubeProfile = DoobProfileUtils::GenerateLinearProfile(LateralTubeSegments, 100.0f, 50.0f);
 	LateralTubeTransform = FTransform::Identity;
 }
 
@@ -68,12 +70,12 @@ void AProceduralTubularJointNode::BuildMainTube() {
 
 	DoobGeometryUtils::GenerateIntersectionRing(TubeIntersection.MainTube, TubeIntersection.LateralTube, TubeIntersection.IntersectionRing);
 
-	/*for (int32 j = 0; j < TubeIntersection.IntersectionRing.CombinedVertices.Num() - 1; ++j) {
+	for (int32 j = 0; j < TubeIntersection.IntersectionRing.CombinedVertices.Num() - 1; ++j) {
 		FVector CurrentVertex = GetActorTransform().TransformPosition(TubeIntersection.IntersectionRing.CombinedVertices[j]);
 		FVector NextVertex = GetActorTransform().TransformPosition(TubeIntersection.IntersectionRing.CombinedVertices[j + 1]);
-		DrawDebugLine(World, CurrentVertex, NextVertex, FColor::Cyan, true, 0.0f, 0, 10.0f);
+		DrawDebugLine(World, CurrentVertex, NextVertex, FColor::Cyan, true, 0.0f, 0, 1.0f);
 		UE_LOG(LogTemp, Log, TEXT("Intersection Remaining Ring Debug iteration: %d, Current Vertex: (X:%f/Y:%f/Z:%f), Next Vertex: (X:%f/Y:%f/Z:%f)"), j, CurrentVertex.X, CurrentVertex.Y, CurrentVertex.Z, NextVertex.X, NextVertex.Y, NextVertex.Z);
-	}*/
+	}
 
 	DoobGeometryUtils::FindIntersectionRingCardinalPoints(TubeIntersection.IntersectionRing, StartPosition, TubeIntersection.MainTube.EndPosition);
 
@@ -89,14 +91,14 @@ void AProceduralTubularJointNode::BuildMainTube() {
 	TubeIntersection.LateralTubeRemovedVertices = TubeIntersection.LateralTube;
 	DoobGeometryUtils::RemoveInternalVertices(TubeIntersection.MainTube, TubeIntersection.LateralTubeRemovedVertices);
 
-	//for (int32 i = 0; i < TubeIntersection.LateralTubeRemovedVertices.Rings.Num(); ++i) {
-	//	for (int32 j = 0; j < TubeIntersection.LateralTubeRemovedVertices.Rings[i].Vertices.Num() - 1; ++j) {
-	//		FVector CurrentVertex = GetActorTransform().TransformPosition(TubeIntersection.LateralTubeRemovedVertices.Rings[i].Vertices[j]);
-	//		FVector NextVertex = GetActorTransform().TransformPosition(TubeIntersection.LateralTubeRemovedVertices.Rings[i].Vertices[j + 1]);
-	//		DrawDebugLine(World, CurrentVertex, NextVertex, FColor::Red, true, 0.0f, 0, 1.0f);
-	//		//UE_LOG(LogTemp, Log, TEXT("Intersection Remaining Ring Debug iteration: %d, Current Vertex: (X:%f/Y:%f/Z:%f), Next Vertex: (X:%f/Y:%f/Z:%f)"), i, CurrentVertex.X, CurrentVertex.Y, CurrentVertex.Z, NextVertex.X, NextVertex.Y, NextVertex.Z);
-	//	}
-	//}
+	for (int32 i = 0; i < TubeIntersection.LateralTube.Rings.Num(); ++i) {
+		for (int32 j = 0; j < TubeIntersection.LateralTube.Rings[i].Vertices.Num() - 1; ++j) {
+			FVector CurrentVertex = GetActorTransform().TransformPosition(TubeIntersection.LateralTube.Rings[i].Vertices[j]);
+			FVector NextVertex = GetActorTransform().TransformPosition(TubeIntersection.LateralTube.Rings[i].Vertices[j + 1]);
+			DrawDebugLine(World, CurrentVertex, NextVertex, FColor::Purple, true, 0.0f, 0, 1.0f);
+			//UE_LOG(LogTemp, Log, TEXT("Intersection Remaining Ring Debug iteration: %d, Current Vertex: (X:%f/Y:%f/Z:%f), Next Vertex: (X:%f/Y:%f/Z:%f)"), i, CurrentVertex.X, CurrentVertex.Y, CurrentVertex.Z, NextVertex.X, NextVertex.Y, NextVertex.Z);
+		}
+	}
 
 	for (int32 i = 0; i < TubeIntersection.LateralTubeIntersectionRings.Rings.Num(); ++i) {
 		for (int32 j = 0; j < TubeIntersection.LateralTubeIntersectionRings.Rings[i].Vertices.Num() - 1; ++j) {
@@ -133,18 +135,32 @@ void AProceduralTubularJointNode::BuildMainTube() {
 	DrawDebugLine(World, GetActorTransform().TransformPosition(TubeIntersection.IntersectionSquare.Corners[0]), GetActorTransform().TransformPosition(TubeIntersection.IntersectionSquare.Corners[3]), FColor::Cyan, true, 0.0f, 0, 10.0f);
 	DrawDebugLine(World, GetActorTransform().TransformPosition(TubeIntersection.IntersectionSquare.Corners[1]), GetActorTransform().TransformPosition(TubeIntersection.IntersectionSquare.Corners[2]), FColor::Cyan, true, 0.0f, 0, 10.0f);
 
-	DoobGeometryUtils::RemoveVerticesByInterpolatedDirections(TubeIntersection, TubeIntersection.IntersectionSquare);
-
 	DoobGeometryUtils::OrderSquareIntersectionConnections(TubeIntersection);
+
+	DoobGeometryUtils::RemoveVerticesByInterpolatedDirections(TubeIntersection, TubeIntersection.IntersectionSquare);
 
 	DoobGeometryUtils::ConnectTwoTubeIntersection(TubeIntersection);
 
-	for (int32 i = 0; i < TubeIntersection.MainTubePartialRings.Num(); ++i) {
-		for (int32 j = 0; j < TubeIntersection.MainTubePartialRings[i].Vertices.Num() - 1; ++j) {
-			FVector CurrentVertex = GetActorTransform().TransformPosition(TubeIntersection.MainTubePartialRings[i].Vertices[j]);
-			FVector NextVertex = GetActorTransform().TransformPosition(TubeIntersection.MainTubePartialRings[i].Vertices[j + 1]);
+	//for (int32 i = 0; i < TubeIntersection.MainTubePartialRings.Num(); ++i) {
+	//	/*DrawDebugSphere(World, GetActorTransform().TransformPosition(TubeIntersection.MainTubePartialRings[i].Vertices[0]), 5.0f, 12, FColor::Magenta, true, 0.0f, 0, 1.0f);
+	//	DrawDebugSphere(World, GetActorTransform().TransformPosition(TubeIntersection.MainTubePartialRings[i].Vertices[1]), 5.0f, 12, FColor::Blue, true, 0.0f, 0, 1.0f);*/
+	//	for (int32 j = 0; j < TubeIntersection.MainTubePartialRings[i].Vertices.Num() - 1; ++j) {
+	//		FVector CurrentVertex = GetActorTransform().TransformPosition(TubeIntersection.MainTubePartialRings[i].Vertices[j]);
+	//		FVector NextVertex = GetActorTransform().TransformPosition(TubeIntersection.MainTubePartialRings[i].Vertices[j + 1]);
+	//		DrawDebugLine(World, CurrentVertex, NextVertex, FColor::Red, true, 0.0f, 0, 1.0f);
+	//		//UE_LOG(LogTemp, Log, TEXT("Intersection Remaining Ring Debug iteration: %d, Current Vertex: (X:%f/Y:%f/Z:%f), Next Vertex: (X:%f/Y:%f/Z:%f)"), i, CurrentVertex.X, CurrentVertex.Y, CurrentVertex.Z, NextVertex.X, NextVertex.Y, NextVertex.Z);
+	//	}
+	//}
+
+	for (int32 i = 0; i < TubeIntersection.IntersectionSquare.TopRightPartialRings.Num(); ++i) {
+		DrawDebugSphere(World, GetActorTransform().TransformPosition(TubeIntersection.IntersectionSquare.TopRightPartialRings[i][0]), 5.0f, 12, FColor::Black, true, 0.0f, 0, 1.0f);
+		DrawDebugSphere(World, GetActorTransform().TransformPosition(TubeIntersection.IntersectionSquare.TopRightPartialRings[i].Last()), 5.0f, 12, FColor::Black, true, 0.0f, 0, 1.0f);
+		//DrawDebugSphere(World, GetActorTransform().TransformPosition(TubeIntersection.MainTubePartialRings[i].Vertices[1]), 5.0f, 12, FColor::Blue, true, 0.0f, 0, 1.0f);
+		for (int32 j = 0; j < TubeIntersection.IntersectionSquare.TopRightPartialRings[i].Num() - 1; ++j) {
+			FVector CurrentVertex = GetActorTransform().TransformPosition(TubeIntersection.IntersectionSquare.TopRightPartialRings[i][j]);
+			FVector NextVertex = GetActorTransform().TransformPosition(TubeIntersection.IntersectionSquare.TopRightPartialRings[i][j + 1]);
 			DrawDebugLine(World, CurrentVertex, NextVertex, FColor::Red, true, 0.0f, 0, 1.0f);
-			//UE_LOG(LogTemp, Log, TEXT("Intersection Remaining Ring Debug iteration: %d, Current Vertex: (X:%f/Y:%f/Z:%f), Next Vertex: (X:%f/Y:%f/Z:%f)"), i, CurrentVertex.X, CurrentVertex.Y, CurrentVertex.Z, NextVertex.X, NextVertex.Y, NextVertex.Z);
+			UE_LOG(LogTemp, Log, TEXT("Intersection Remaining Ring Debug iteration: %d, Current Vertex: (X:%f/Y:%f/Z:%f), Next Vertex: (X:%f/Y:%f/Z:%f)"), i, CurrentVertex.X, CurrentVertex.Y, CurrentVertex.Z, NextVertex.X, NextVertex.Y, NextVertex.Z);
 		}
 	}
 

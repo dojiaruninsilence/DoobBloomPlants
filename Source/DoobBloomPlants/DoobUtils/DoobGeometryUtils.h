@@ -36,10 +36,10 @@ namespace DoobGeometryUtils {
         FVector Centroid;
         TArray<FVector> CardinalVertices; // nesw - 0123
         TArray<int32> CardinalIndices;
-        TArray<FVector> BottomLeftVertices;
+        /*TArray<FVector> BottomLeftVertices;
         TArray<FVector> BottomRightVertices;
         TArray<FVector> TopRightVertices;
-        TArray<FVector> TopLeftVertices;
+        TArray<FVector> TopLeftVertices;*/
     };
 
     struct FIntersectionSquareData {
@@ -49,10 +49,14 @@ namespace DoobGeometryUtils {
         TArray<FVector> RightSideRingConnections;
         FVector Center;
         TArray<float> Angles;
-        TArray<FVector> BottomLeftVertices;
+        /*TArray<FVector> BottomLeftVertices;
         TArray<FVector> BottomRightVertices;
         TArray<FVector> TopRightVertices;
-        TArray<FVector> TopLeftVertices;
+        TArray<FVector> TopLeftVertices;*/
+        TArray<TArray<FVector>> BottomLeftPartialRings;
+        TArray<TArray<FVector>> BottomRightPartialRings;
+        TArray<TArray<FVector>> TopRightPartialRings;
+        TArray<TArray<FVector>> TopLeftPartialRings;
     };
 
     /**
@@ -167,6 +171,8 @@ namespace DoobGeometryUtils {
 
     void ConnectIntersectionRingToSquare(FTwoTubeIntersectionData& TubeIntersectionData, int32& BaseIndex);
 
+    void ConnectIntersectionCornerArrays(const TArray<TArray<FVector>>& CornerVertexArrays, TArray<FVector>& Vertices, TArray<int32>& Triangles, int32& BaseIndex);
+
     void ConnectTwoTubeIntersection(FTwoTubeIntersectionData& TubeIntersectionData);
 
     /**
@@ -194,6 +200,8 @@ namespace DoobGeometryUtils {
     );
 
     bool IsPointInsideFrustum(const FRingData& StartRing, const FRingData& EndRing, const FVector& Point);
+
+    bool IsPointInsidePolygon(const TArray<FVector>& RingVertices, const FVector& Point, const FVector& RingCenter);
 
     void RemoveInternalVertices(const FTubeData& TubeA, FTubeData& TubeB);
 
@@ -226,7 +234,19 @@ namespace DoobGeometryUtils {
 
     int32 FindVertexIndex(const TArray<FVector>& Vertices, const FVector& TargetVertex);
 
+    int32 FindRingIndexByCenter(const TArray<FRingData>& Rings, const FVector& Center, float Tolerance = KINDA_SMALL_NUMBER);
+
     void OrderSquareIntersectionConnections(FTwoTubeIntersectionData& TubeIntersectionData);
+
+    void OrderSquareIntersectionConnectionsOneCorner(
+        const FTubeData& MainTubeIntersectionRings,
+        const FTubeData& LateralTube,
+        const TArray<FVector> RingVertices,
+        const TArray<FVector> SquareVertices,
+        const int32 StartIndex,
+        TArray<TArray<FVector>>& OutVertexArrays,
+        const bool Reversed
+    );
 
     // --------------------------------------------------------if this works remove the other section ------------------------------------------------------//
     void RemoveVerticesByInterpolatedDirections(
