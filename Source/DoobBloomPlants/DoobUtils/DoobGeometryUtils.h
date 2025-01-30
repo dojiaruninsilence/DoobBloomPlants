@@ -1,4 +1,4 @@
-/**
+ï»¿/**
  * @file DoobGeometryUtils.h
  * @brief Utility functions and data structures for geometric operations in the Doob procedural generation system.
  *
@@ -94,10 +94,10 @@
 
 #include "DoobProfileUtils.h"
 
-/**
- * @namespace DoobGeometryUtils
- * Contains utility functions and data structures for geometric operations.
- */
+ /**
+  * @namespace DoobGeometryUtils
+  * Contains utility functions and data structures for geometric operations.
+  */
 namespace DoobGeometryUtils {
 
     // ---------------------------------------------------------------------------------------------------------------------------------------------------- //
@@ -241,6 +241,8 @@ namespace DoobGeometryUtils {
      * @note The sorting is based on the angle of the projected vertices in the plane perpendicular to the average normal.
      */
     TArray<FVector> OrderRingVertices(const TArray<FVector>& InputVertices);
+
+    TArray<FVector> ReorderRingVerticesToDirection(const TArray<FVector>& RingVertices, const FVector& InputDirection);
 
     /**
      * @brief Finds and assigns the cardinal points of the intersection ring.
@@ -400,6 +402,8 @@ namespace DoobGeometryUtils {
         FIntersectionSquareData& IntersectionSquare
     );
 
+    FTubeData ReorderTubeVerticesToDirection(const FTubeData& InputTube, const FVector& InputDirection);
+
     // ---------------------------------------------------------------------------------------------------------------------------------------------------- //
     //                                                            4. Intersection Calculations                                                              //
     // ---------------------------------------------------------------------------------------------------------------------------------------------------- //
@@ -442,9 +446,17 @@ namespace DoobGeometryUtils {
      * @param Precision The precision value used for the intersection calculation (default: KINDA_SMALL_NUMBER).
      */
     void GenerateHalfIntersectionRing(
-        const FTubeData& MainTube,
-        const FTubeData& LateralTube,
-        TArray<FVector>& OutRingData,
+        const FTubeData& TubeA,
+        const FTubeData& TubeB,
+        TArray<FVector>& OutRingVertices,
+        float Precision = KINDA_SMALL_NUMBER
+    );
+
+    void GenerateHalfIntersectionRingUsingCircumference(
+        const FTubeData& TubeA,
+        const FTubeData& TubeB,
+        TArray<FVector>& OutRingVertices,
+        bool OnePerRing = true,
         float Precision = KINDA_SMALL_NUMBER
     );
 
@@ -575,7 +587,7 @@ namespace DoobGeometryUtils {
     /**
      * @brief Checks if a line segment intersects a triangle.
      *
-     * This function performs the Möller–Trumbore intersection algorithm to determine if a
+     * This function performs the Mï¿½llerï¿½Trumbore intersection algorithm to determine if a
      * line segment intersects a triangle in 3D space. If an intersection occurs, the point
      * of intersection is calculated and returned in the OutIntersectionPoint.
      *
@@ -743,7 +755,7 @@ namespace DoobGeometryUtils {
      * and generate triangles. The resulting vertices and triangles are appended to the `TubeIntersectionData.AllVertices` and `TubeIntersectionData.Triangles` arrays, respectively.
      * The `BaseIndex` is updated during the process to maintain the correct indexing for vertices and triangles.
      *
-     * @param TubeIntersectionData The data structure containing intersection details, including corner ring data and the square’s geometry.
+     * @param TubeIntersectionData The data structure containing intersection details, including corner ring data and the squareï¿½s geometry.
      * @param BaseIndex The base index used to compute the vertex indices when connecting corner arrays.
      */
     void ConnectIntersectionRingToSquare(FTwoTubeIntersectionData& TubeIntersectionData, int32& BaseIndex);

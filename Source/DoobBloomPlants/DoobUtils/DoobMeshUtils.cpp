@@ -126,4 +126,84 @@ namespace DoobMeshUtils {
 			}
 		}
 	}
+
+	FVector CalculateMeshCentroid(const TArray<FVector>& Vertices) {
+		FVector Centroid(0.0f, 0.0f, 0.0f);
+		for (const FVector& Vertex : Vertices) {
+			Centroid += Vertex;
+		}
+		return Centroid / Vertices.Num();
+	}
+
+	void RemoveInwardFacingTriangles(
+		TArray<FVector>& Vertices,
+		TArray<int32>& Triangles		
+	) {
+		TArray<int32> ValidTriangles;
+		TArray<bool> VertexUsed;
+		VertexUsed.SetNum(Vertices.Num());
+
+		FVector MeshOrigin = CalculateMeshCentroid(Vertices);
+
+		// Initialize VertexUsed to false
+		for (bool& Used : VertexUsed) {
+			Used = false;
+		}
+
+		// Loop through each triangle
+		for (int32 i = 0; i < Triangles.Num(); i += 3) {
+			int32 Index0 = Triangles[i];
+			int32 Index1 = Triangles[i + 1];
+			int32 Index2 = Triangles[i + 2];
+
+			FVector V0 = Vertices[Index0];
+			FVector V1 = Vertices[Index1];
+			FVector V2 = Vertices[Index2];
+
+			// Calculate the normal of the triangle
+			FVector Normal = FVector::CrossProduct(V1 - V0, V2 - V0).GetSafeNormal();
+
+			// Calculate a vector from the centroid to the mesh origin
+			FVector Centroid = (V0 + V1 + V2) / 3.0f;
+			FVector Direction = (Centroid - MeshOrigin).GetSafeNormal();
+
+			// Check if the triangle normal points inward
+			if (FVector::DotProduct(Normal, Direction) < 0) { // Reverse condition
+				// Add the triangle to the valid list
+				ValidTriangles.Add(Index0);
+				ValidTriangles.Add(Index1);
+				ValidTriangles.Add(Index2);
+
+				// Mark the vertices as used
+				VertexUsed[Index0] = true;
+				VertexUsed[Index1] = true;
+				VertexUsed[Index2] = true;
+			}
+		}
+
+		// Rebuild the vertices array to only include used vertices
+		TArray<FVector> NewVertices;
+		TArray<int32> VertexMapping;
+		VertexMapping.SetNum(Vertices.Num());
+
+		for (int32 i = 0; i < Vertices.Num(); i++) {
+			if (VertexUsed[i]) {
+				VertexMapping[i] = NewVertices.Num();
+				NewVertices.Add(Vertices[i]);
+			}
+			else {
+				VertexMapping[i] = -1;
+			}
+		}
+
+		// Rebuild the triangles array with updated vertex indices
+		TArray<int32> NewTriangles;
+		for (int32 i : ValidTriangles) {
+			NewTriangles.Add(VertexMapping[i]);
+		}
+
+		// Replace the original arrays
+		Vertices = NewVertices;
+		Triangles = NewTriangles;
+	}
 }

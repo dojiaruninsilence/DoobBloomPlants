@@ -16,6 +16,10 @@ namespace DoobMathUtils {
 	 */
 	FVector GenerateRandomPerpendicularVector(const FVector& BaseVector);
 
+	FVector GetRandomDirectionBetween(const FVector& DirectionA, const FVector& DirectionB, const float RangeStart, const float RangeEnd);
+
+	FVector GetPerpendicularDirection(const FVector& MainDirection, const FVector& LateralDirection);
+
 	/**
 	 * Calculates an ease-out increment value based on the current step.
 	 * @param TotalSteps The total number of steps in the process.

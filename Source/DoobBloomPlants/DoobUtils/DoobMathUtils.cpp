@@ -41,6 +41,26 @@ namespace DoobMathUtils {
 		return FVector::ZeroVector;
 	}
 
+	FVector GetRandomDirectionBetween(const FVector& DirectionA, const FVector& DirectionB, const float RangeStart, const float RangeEnd) {
+		// Ensure the input directions are normalized
+		FVector NormalizedA = DirectionA.GetSafeNormal();
+		FVector NormalizedB = DirectionB.GetSafeNormal();
+
+		// Generate a random blend factor between 0 and 1
+		float RandomFactor = FMath::RandRange(RangeStart, RangeEnd);
+
+		// Perform spherical linear interpolation (SLERP)
+		FVector RandomDirection = FMath::Lerp(NormalizedA, NormalizedB, RandomFactor).GetSafeNormal();
+
+		return RandomDirection;
+	}
+
+	FVector GetPerpendicularDirection(const FVector& MainDirection, const FVector& LateralDirection) {
+		FVector PerpendicularDirection = LateralDirection - (FVector::DotProduct(LateralDirection, MainDirection) * MainDirection);
+
+		return PerpendicularDirection;
+	}
+
 	float EaseOutIncrement(int32 TotalSteps, int32 CurrentStep)
 	{
 		// normalize the step (from 0 to 1)

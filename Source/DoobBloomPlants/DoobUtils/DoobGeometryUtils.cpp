@@ -7,6 +7,7 @@
 
 //#include "DoobProfileUtils.h"
 #include "DoobContainerUtils.h"
+#include "DoobMathUtils.h"
 
 namespace DoobGeometryUtils {
 	// ---------------------------------------------------------------------------------------------------------------------------------------------------- //
@@ -96,6 +97,23 @@ namespace DoobGeometryUtils {
 		}
 
 		return SortedVertices;
+	}
+
+	TArray<FVector> ReorderRingVerticesToDirection(const TArray<FVector>& RingVertices, const FVector& InputDirection) {
+		//TArray<FVector> OutRingVertices = RingVertices;
+
+		int32 ClosestIndex = 0;
+		float MaxProjection = -FLT_MAX;
+
+		for (int32 i = 0; i < RingVertices.Num(); i++) {
+			float projection = FVector::DotProduct(RingVertices[i], InputDirection);
+			if (projection > MaxProjection) {
+				MaxProjection = projection;
+				ClosestIndex = i;
+			}
+		}
+
+		return DoobContainerUtils::ReorderedArray(RingVertices, ClosestIndex);
 	}
 
 	void FindIntersectionRingCardinalPoints(FIntersectionRingData& IntersectionRing, const FVector& StartCenter, const FVector& EndCenter) {
@@ -698,6 +716,19 @@ namespace DoobGeometryUtils {
 		TubeIntersectionData.MTBelowIntersectionRingPartial = TempBottomRing;
 	}
 
+	FTubeData ReorderTubeVerticesToDirection(const FTubeData& InputTube, const FVector& InputDirection) {
+		FTubeData OutTube = InputTube;
+		OutTube.Rings.Empty();
+
+		for (int32 i = 0; i < InputTube.Rings.Num(); ++i) {
+			FRingData TempRing = InputTube.Rings[i];
+			TempRing.Vertices = ReorderRingVerticesToDirection(InputTube.Rings[i].Vertices, InputDirection);
+			OutTube.Rings.Add(TempRing);
+		}
+
+		return OutTube;
+	}
+
 	// ---------------------------------------------------------------------------------------------------------------------------------------------------- //
 	//                                                            4. Intersection Calculations                                                              //
 	// ---------------------------------------------------------------------------------------------------------------------------------------------------- //
@@ -709,9 +740,20 @@ namespace DoobGeometryUtils {
 		float Precision
 	) {
 		TArray<FVector> CombinedVertices;
+		TArray<FVector> MainTubeRingIntersectionVerts;
+		/*TArray<FVector> LateralTubeRingIntersectionVerts;*/
 
 		GenerateHalfIntersectionRing(MainTube, LateralTube, OutRingData.MainTubeVertices);
 		GenerateHalfIntersectionRing(LateralTube, MainTube, OutRingData.LateralTubeVertices);
+
+		FVector MainTubeReorderDirection = -DoobMathUtils::GetPerpendicularDirection(MainTube.Direction, LateralTube.Direction);
+		FTubeData MainTubeReordered = ReorderTubeVerticesToDirection(MainTube, MainTubeReorderDirection);
+
+		GenerateHalfIntersectionRingUsingCircumference(MainTubeReordered, LateralTube, MainTubeRingIntersectionVerts);
+		OutRingData.MainTubeVertices.Append(MainTubeRingIntersectionVerts);
+
+		/*GenerateHalfIntersectionRingUsingCircumference(LateralTube, MainTube, LateralTubeRingIntersectionVerts, false);
+		OutRingData.LateralTubeVertices.Append(LateralTubeRingIntersectionVerts);*/
 
 		CombinedVertices = OutRingData.MainTubeVertices;
 		CombinedVertices.Append(OutRingData.LateralTubeVertices);
@@ -770,6 +812,103 @@ namespace DoobGeometryUtils {
 						if (LineSegmentIntersectsTriangle(LineStartA, LineEndA, V0, V1, V2, IntersectionPoint) ||
 							LineSegmentIntersectsTriangle(LineStartA, LineEndA, V1, V2, V3, IntersectionPoint)) {
 							OutRingVertices.Add(IntersectionPoint);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	void GenerateHalfIntersectionRingUsingCircumference(
+		const FTubeData& TubeA,
+		const FTubeData& TubeB,
+		TArray<FVector>& OutRingVertices,
+		bool OnePerRing,
+		float Precision
+	) {
+		for (int32 LineIndexA = 0; LineIndexA < TubeA.Rings.Num(); ++LineIndexA) {
+			const FRingData& CurrentRingA = TubeA.Rings[LineIndexA];
+
+			int32 NumVerticesA = CurrentRingA.Vertices.Num();
+
+			bool ForwardIntersectionAdded = false;
+			bool ReverseIntersectionAdded = false;
+
+			for (int32 VertexIndexA = 0; VertexIndexA < NumVerticesA; ++VertexIndexA) {
+				if (ForwardIntersectionAdded && ReverseIntersectionAdded && OnePerRing) continue;
+
+				FVector LineStartA = CurrentRingA.Vertices[VertexIndexA];
+				FVector LineEndA = CurrentRingA.Vertices[(VertexIndexA + 1) % NumVerticesA];
+
+				FVector RevLineStartA = CurrentRingA.Vertices[(NumVerticesA - 1 - VertexIndexA + NumVerticesA) % NumVerticesA];
+				FVector RevLineEndA = CurrentRingA.Vertices[(NumVerticesA - 1 - (VertexIndexA + 1) + NumVerticesA) % NumVerticesA];
+
+				FRingData StartRingA;
+				FRingData EndRingA;
+				FRingData StartRingB;
+				FRingData EndRingB;
+
+				FRingData RevStartRingA;
+				FRingData RevEndRingA;
+				FRingData RevStartRingB;
+				FRingData RevEndRingB;
+
+				FindSegmentForPoint(LineStartA, TubeB, StartRingA, EndRingA);
+				FindSegmentForPoint(LineEndA, TubeB, StartRingB, EndRingB);
+
+				FindSegmentForPoint(RevLineStartA, TubeB, RevStartRingA, RevEndRingA);
+				FindSegmentForPoint(RevLineEndA, TubeB, RevStartRingB, RevEndRingB);
+
+				TArray<FRingData> TempTubeB;
+				TempTubeB.Add(StartRingA);
+				TempTubeB.Add(EndRingA);
+				TempTubeB.Add(StartRingB);
+				TempTubeB.Add(EndRingB);
+
+				TempTubeB.Add(RevStartRingA);
+				TempTubeB.Add(RevEndRingA);
+				TempTubeB.Add(RevStartRingB);
+				TempTubeB.Add(RevEndRingB);
+
+				
+
+				// loop through TubeB rectangles
+				for (int32 RingIndexB = 0; RingIndexB < TempTubeB.Num() - 1; ++RingIndexB) {
+					if (ForwardIntersectionAdded && ReverseIntersectionAdded && OnePerRing) continue;
+
+					const FRingData& CurrentRingB = TempTubeB[RingIndexB];
+					const FRingData& NextRingB = TempTubeB[RingIndexB + 1];
+					int32 NumVerticesB = CurrentRingB.Vertices.Num();
+
+					for (int32 VertexIndexB = 0; VertexIndexB < NumVerticesB; ++VertexIndexB) {
+						if (ForwardIntersectionAdded && ReverseIntersectionAdded && OnePerRing) continue;
+
+						FVector V0 = CurrentRingB.Vertices[VertexIndexB];
+						FVector V1 = CurrentRingB.Vertices[(VertexIndexB + 1) % NumVerticesB];
+						FVector V2 = NextRingB.Vertices[VertexIndexB];
+						FVector V3 = NextRingB.Vertices[(VertexIndexB + 1) % NumVerticesB];
+
+						// need to add two bools to store if forward or reverse intersect. so we only get the first intersection
+
+						// check for intersection with triangles
+						FVector IntersectionPoint;
+						bool DoesForwardIntersect = 
+							LineSegmentIntersectsTriangle(LineStartA, LineEndA, V0, V1, V2, IntersectionPoint) ||
+							LineSegmentIntersectsTriangle(LineStartA, LineEndA, V1, V2, V3, IntersectionPoint);
+
+						FVector RevIntersectionPoint;
+						bool DoesReverseIntersect =
+							LineSegmentIntersectsTriangle(RevLineStartA, RevLineEndA, V0, V1, V2, RevIntersectionPoint) ||
+							LineSegmentIntersectsTriangle(RevLineStartA, RevLineEndA, V1, V2, V3, RevIntersectionPoint);
+
+						if (DoesForwardIntersect && !ForwardIntersectionAdded) {
+							OutRingVertices.Add(IntersectionPoint);
+							ForwardIntersectionAdded = true;
+						}
+
+						if (DoesReverseIntersect && !ReverseIntersectionAdded) {
+							OutRingVertices.Add(RevIntersectionPoint);
+							ReverseIntersectionAdded = true;
 						}
 					}
 				}

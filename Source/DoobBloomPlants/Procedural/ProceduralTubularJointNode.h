@@ -39,6 +39,37 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category = "Stem Node")
 	FVector LateralStartPosition = FVector::ZeroVector;
 
+	// direction params
+	FVector MainTubeDirection;
+
+	FVector LateralTubeDirection;
+
+	// length params
+	float MainTubeLength;
+	float LateralTubeLength;
+
+	UPROPERTY(EditAnywhere)
+	int32 MainTubeSegments;
+
+	UPROPERTY(EditAnywhere)
+	int32 LateralTubeSegments;
+
+	// radius params
+	UPROPERTY(EditAnywhere)
+	float MainTubeStartRadius;
+
+	UPROPERTY(EditAnywhere)
+	float MainTubeMidRadius;
+
+	UPROPERTY(EditAnywhere)
+	float MainTubeEndRadius;
+
+	UPROPERTY(EditAnywhere)
+	float LateralTubeRadius;
+
+	int32 MainTubeNumSides;
+	int32 LateralTubeNumSides;
+
 private:
 	UPROPERTY(VisibleAnywhere)
 	UProceduralMeshComponent* TubularJointNodeMesh;
@@ -51,19 +82,7 @@ private:
 	FTransform MainTubeTransform;
 
 	UPROPERTY(EditAnywhere)
-	FTransform LateralTubeTransform;
-
-	UPROPERTY(EditAnywhere)
-	int32 MainTubeSegments;
-
-	UPROPERTY(EditAnywhere)
-	int32 LateralTubeSegments;
-
-	UPROPERTY(EditAnywhere)
-	float MainTubeRadius;
-
-	UPROPERTY(EditAnywhere)
-	float LateralTubeRadius;
+	FTransform LateralTubeTransform;	
 
 	UPROPERTY(EditAnywhere)
 	bool bIsMainTubeClosed;

@@ -45,4 +45,11 @@ namespace DoobMeshUtils {
 		int32 ProfileSegments,
 		TArray<int32>& OutTriangles
 	);
+
+	FVector CalculateMeshCentroid(const TArray<FVector>& Vertices);
+
+	void RemoveInwardFacingTriangles(
+		TArray<FVector>& Vertices,
+		TArray<int32>& Triangles
+	);
 }
