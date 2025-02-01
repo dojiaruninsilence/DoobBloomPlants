@@ -33,7 +33,7 @@ AProceduralTubularJointNode::AProceduralTubularJointNode()
 
 	MainTubeProfile = DoobProfileUtils::GenerateEggShapedCylinderProfile(MainTubeSegments, MainTubeStartRadius, MainTubeMidRadius, MainTubeEndRadius, 0.35f);
 
-	LateralTubeProfile = DoobProfileUtils::GenerateEggShapedCylinderProfile(MainTubeSegments, 0.0f, 200.0f, 50.0f, 0.35f);
+	LateralTubeProfile = DoobProfileUtils::GenerateEggShapedCylinderProfile(MainTubeSegments, 0.0f, 200.0f, 50.0f, 0.75f);
 
 	// Generate a default circular profile
 	//MainTubeProfile = DoobProfileUtils::GenerateLinearProfile(MainTubeSegments, 200.0f, 100.0f);

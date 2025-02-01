@@ -612,6 +612,16 @@ namespace DoobGeometryUtils {
         FVector& OutIntersectionPoint
     );
 
+    bool LineSegmentIntersectsQuadrilateral(
+        const FVector& LineStart,
+        const FVector& LineEnd,
+        const FVector& V0,
+        const FVector& V1,
+        const FVector& V2,
+        const FVector& V3,
+        FVector& OutIntersectionPoint
+    );
+
     /**
      * @brief Computes the centroid (geometric center) of a set of vertices.
      *

@@ -741,7 +741,7 @@ namespace DoobGeometryUtils {
 	) {
 		TArray<FVector> CombinedVertices;
 		TArray<FVector> MainTubeRingIntersectionVerts;
-		/*TArray<FVector> LateralTubeRingIntersectionVerts;*/
+		TArray<FVector> LateralTubeRingIntersectionVerts;
 
 		GenerateHalfIntersectionRing(MainTube, LateralTube, OutRingData.MainTubeVertices);
 		GenerateHalfIntersectionRing(LateralTube, MainTube, OutRingData.LateralTubeVertices);
@@ -749,7 +749,10 @@ namespace DoobGeometryUtils {
 		FVector MainTubeReorderDirection = -DoobMathUtils::GetPerpendicularDirection(MainTube.Direction, LateralTube.Direction);
 		FTubeData MainTubeReordered = ReorderTubeVerticesToDirection(MainTube, MainTubeReorderDirection);
 
-		GenerateHalfIntersectionRingUsingCircumference(MainTubeReordered, LateralTube, MainTubeRingIntersectionVerts);
+		FVector LateralTubeReorderDirection = -DoobMathUtils::GetPerpendicularDirection(LateralTube.Direction, MainTube.Direction);
+		FTubeData LateralTubeReordered = ReorderTubeVerticesToDirection(LateralTube, LateralTubeReorderDirection);
+
+		GenerateHalfIntersectionRingUsingCircumference(MainTubeReordered, LateralTube, MainTubeRingIntersectionVerts, false);
 		OutRingData.MainTubeVertices.Append(MainTubeRingIntersectionVerts);
 
 		/*GenerateHalfIntersectionRingUsingCircumference(LateralTube, MainTube, LateralTubeRingIntersectionVerts, false);
@@ -834,6 +837,8 @@ namespace DoobGeometryUtils {
 			bool ForwardIntersectionAdded = false;
 			bool ReverseIntersectionAdded = false;
 
+			UE_LOG(LogTemp, Warning, TEXT("Processing Ring %d with %d vertices"), LineIndexA, NumVerticesA);
+
 			for (int32 VertexIndexA = 0; VertexIndexA < NumVerticesA; ++VertexIndexA) {
 				if (ForwardIntersectionAdded && ReverseIntersectionAdded && OnePerRing) continue;
 
@@ -842,6 +847,14 @@ namespace DoobGeometryUtils {
 
 				FVector RevLineStartA = CurrentRingA.Vertices[(NumVerticesA - 1 - VertexIndexA + NumVerticesA) % NumVerticesA];
 				FVector RevLineEndA = CurrentRingA.Vertices[(NumVerticesA - 1 - (VertexIndexA + 1) + NumVerticesA) % NumVerticesA];
+
+				UE_LOG(LogTemp, Warning, TEXT("Forward Line: Start (%.3f, %.3f, %.3f) -> End (%.3f, %.3f, %.3f)"),
+					LineStartA.X, LineStartA.Y, LineStartA.Z,
+					LineEndA.X, LineEndA.Y, LineEndA.Z);
+
+				UE_LOG(LogTemp, Warning, TEXT("Reverse Line: Start (%.3f, %.3f, %.3f) -> End (%.3f, %.3f, %.3f)"),
+					RevLineStartA.X, RevLineStartA.Y, RevLineStartA.Z,
+					RevLineEndA.X, RevLineEndA.Y, RevLineEndA.Z);
 
 				FRingData StartRingA;
 				FRingData EndRingA;
@@ -858,6 +871,8 @@ namespace DoobGeometryUtils {
 
 				FindSegmentForPoint(RevLineStartA, TubeB, RevStartRingA, RevEndRingA);
 				FindSegmentForPoint(RevLineEndA, TubeB, RevStartRingB, RevEndRingB);
+
+				UE_LOG(LogTemp, Warning, TEXT("Found segments for forward and reverse line"));
 
 				TArray<FRingData> TempTubeB;
 				TempTubeB.Add(StartRingA);
@@ -880,33 +895,38 @@ namespace DoobGeometryUtils {
 					const FRingData& NextRingB = TempTubeB[RingIndexB + 1];
 					int32 NumVerticesB = CurrentRingB.Vertices.Num();
 
+					UE_LOG(LogTemp, Warning, TEXT("Processing TempTubeB Rings %d and %d with %d vertices"),
+						RingIndexB, RingIndexB + 1, NumVerticesB);
+
 					for (int32 VertexIndexB = 0; VertexIndexB < NumVerticesB; ++VertexIndexB) {
 						if (ForwardIntersectionAdded && ReverseIntersectionAdded && OnePerRing) continue;
 
 						FVector V0 = CurrentRingB.Vertices[VertexIndexB];
-						FVector V1 = CurrentRingB.Vertices[(VertexIndexB + 1) % NumVerticesB];
-						FVector V2 = NextRingB.Vertices[VertexIndexB];
-						FVector V3 = NextRingB.Vertices[(VertexIndexB + 1) % NumVerticesB];
-
-						// need to add two bools to store if forward or reverse intersect. so we only get the first intersection
+						FVector V1 = NextRingB.Vertices[VertexIndexB];
+						FVector V2 = NextRingB.Vertices[(VertexIndexB + 1) % NumVerticesB];
+						FVector V3 = CurrentRingB.Vertices[(VertexIndexB + 1) % NumVerticesB];
 
 						// check for intersection with triangles
 						FVector IntersectionPoint;
-						bool DoesForwardIntersect = 
-							LineSegmentIntersectsTriangle(LineStartA, LineEndA, V0, V1, V2, IntersectionPoint) ||
-							LineSegmentIntersectsTriangle(LineStartA, LineEndA, V1, V2, V3, IntersectionPoint);
+						bool DoesForwardIntersect = LineSegmentIntersectsQuadrilateral(LineStartA, LineEndA, V0, V1, V2, V3, IntersectionPoint);
+							/*LineSegmentIntersectsTriangle(LineStartA, LineEndA, V0, V1, V2, IntersectionPoint) ||
+							LineSegmentIntersectsTriangle(LineStartA, LineEndA, V1, V2, V3, IntersectionPoint);*/
 
 						FVector RevIntersectionPoint;
-						bool DoesReverseIntersect =
-							LineSegmentIntersectsTriangle(RevLineStartA, RevLineEndA, V0, V1, V2, RevIntersectionPoint) ||
-							LineSegmentIntersectsTriangle(RevLineStartA, RevLineEndA, V1, V2, V3, RevIntersectionPoint);
+						bool DoesReverseIntersect = LineSegmentIntersectsQuadrilateral(RevLineStartA, RevLineEndA, V0, V1, V2, V3, RevIntersectionPoint);
+							/*LineSegmentIntersectsTriangle(RevLineStartA, RevLineEndA, V0, V1, V2, RevIntersectionPoint) ||
+							LineSegmentIntersectsTriangle(RevLineStartA, RevLineEndA, V1, V2, V3, RevIntersectionPoint);*/
 
 						if (DoesForwardIntersect && !ForwardIntersectionAdded) {
+							UE_LOG(LogTemp, Warning, TEXT("Forward intersection found at (%.3f, %.3f, %.3f)"),
+								IntersectionPoint.X, IntersectionPoint.Y, IntersectionPoint.Z);
 							OutRingVertices.Add(IntersectionPoint);
 							ForwardIntersectionAdded = true;
 						}
 
 						if (DoesReverseIntersect && !ReverseIntersectionAdded) {
+							UE_LOG(LogTemp, Warning, TEXT("Reverse intersection found at (%.3f, %.3f, %.3f)"),
+								RevIntersectionPoint.X, RevIntersectionPoint.Y, RevIntersectionPoint.Z);
 							OutRingVertices.Add(RevIntersectionPoint);
 							ReverseIntersectionAdded = true;
 						}
@@ -1328,6 +1348,85 @@ namespace DoobGeometryUtils {
 		OutIntersectionPoint = LineStart + T * LineDir;
 
 		return true;
+	}
+
+	bool LineSegmentIntersectsQuadrilateral(
+		const FVector& LineStart,
+		const FVector& LineEnd,
+		const FVector& V0,
+		const FVector& V1,
+		const FVector& V2,
+		const FVector& V3,
+		FVector& OutIntersectionPoint
+	) {
+		// compute plane normal using cross product of two edges
+		FVector Edge1 = V1 - V0;
+		FVector Edge2 = V3 - V0;
+		FVector PlaneNormal = FVector::CrossProduct(Edge1, Edge2).GetSafeNormal();
+
+		// compute plane equation: N . (P - V0) = 0
+		float PlaneD = -FVector::DotProduct(PlaneNormal, V0);
+
+		// compute line direction
+		FVector LineDir = LineEnd - LineStart;
+		float Denom = FVector::DotProduct(PlaneNormal, LineDir);
+
+		// check if the line is parallel to the plane
+		if (FMath::Abs(Denom) < KINDA_SMALL_NUMBER) {
+			UE_LOG(LogTemp, Log, TEXT("Line is parallel to the plane V0: %s, V1: %s, V2: %s, V3: %s, LineStart: %s, LineEnd: %s"), *V0.ToString(), *V1.ToString(), *V2.ToString(), *V3.ToString(), *LineStart.ToString(), *LineEnd.ToString());
+			return false;
+		}
+
+		// compute the intersection point with the plane
+		float T = -(FVector::DotProduct(PlaneNormal, LineStart) + PlaneD) / Denom;
+		if (T < 0.0f || T > 1.0f) {
+			UE_LOG(LogTemp, Log, TEXT("Intersection is outside the line segment V0: %s, V1: %s, V2: %s, V3: %s, LineStart: %s, LineEnd: %s"), *V0.ToString(), *V1.ToString(), *V2.ToString(), *V3.ToString(), *LineStart.ToString(), *LineEnd.ToString());
+			return false; // intersection outside the line segment
+		}
+
+		OutIntersectionPoint = LineStart + T * LineDir;
+
+		//// check if the intersection point is inside the quadrilateral
+		//FVector QuadEdges[4] = { V1 - V0, V2 - V1, V3 - V2, V0 - V3 };
+		//FVector ToPoint[4] = { 
+		//	OutIntersectionPoint - V0, 
+		//	OutIntersectionPoint - V1, 
+		//	OutIntersectionPoint - V2, 
+		//	OutIntersectionPoint - V3 
+		//};
+
+		//for (int32 i = 0; i < 4; i++) {
+		//	FVector Cross = FVector::CrossProduct(QuadEdges[i], ToPoint[i]);
+		//	if (FVector::DotProduct(Cross, PlaneNormal) < 0) {
+		//		UE_LOG(LogTemp, Log, TEXT("Point is outside the quadrilateral V0: %s, V1: %s, V2: %s, V3: %s, LineStart: %s, LineEnd: %s"), *V0.ToString(), *V1.ToString(), *V2.ToString(), *V3.ToString(), *LineStart.ToString(), *LineEnd.ToString());
+		//		return false; // point is outside the quadrilateral
+		//	}
+		//}
+
+		//UE_LOG(LogTemp, Log, TEXT("Intersection is inside the quadrilateral V0: %s, V1: %s, V2: %s, V3: %s, LineStart: %s, LineEnd: %s"), *V0.ToString(), *V1.ToString(), *V2.ToString(), *V3.ToString(), *LineStart.ToString(), *LineEnd.ToString());
+
+		//return true; // intersection confirmed inside the quadrilateral
+
+		// Check if the intersection point is inside the quadrilateral using the winding number method
+		FVector QuadVertices[4] = { V0, V1, V2, V3 };
+		float TotalAngle = 0.0f;
+
+		for (int i = 0; i < 4; i++) {
+			FVector A = (QuadVertices[i] - OutIntersectionPoint).GetSafeNormal();
+			FVector B = (QuadVertices[(i + 1) % 4] - OutIntersectionPoint).GetSafeNormal();
+			float Angle = FMath::Acos(FVector::DotProduct(A, B));
+			TotalAngle += Angle;
+		}
+
+		// If the total angle is close to 2pi (360 degrees), the point is inside
+		if (FMath::Abs(TotalAngle - 2.0f * PI) < 0.01f) {
+			UE_LOG(LogTemp, Warning, TEXT("Intersection is inside the quadrilateral V0: %s, V1: %s, V2: %s, V3: %s, LineStart: %s, LineEnd: %s"), *V0.ToString(), *V1.ToString(), *V2.ToString(), *V3.ToString(), *LineStart.ToString(), *LineEnd.ToString());
+			return true;
+		}
+
+		UE_LOG(LogTemp, Log, TEXT("Point is outside the quadrilateral V0: %s, V1: %s, V2: %s, V3: %s, LineStart: %s, LineEnd: %s"), *V0.ToString(), *V1.ToString(), *V2.ToString(), *V3.ToString(), *LineStart.ToString(), *LineEnd.ToString());
+
+		return false;
 	}
 
 	FVector ComputeCentroid(const TArray<FVector>& Vertices) {
