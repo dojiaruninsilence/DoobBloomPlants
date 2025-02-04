@@ -109,7 +109,7 @@ void AProceduralTubularJointNode::BuildMainTube() {
 	DrawDebugSphere(World, GetActorTransform().TransformPosition(TubeIntersection.IntersectionRing.CombinedVertices[0]), 5.0f, 12, FColor::Black, true, 0.0f, 0, 1.0f);
 
 	DrawDebugSphere(World, GetActorTransform().TransformPosition(TubeIntersection.IntersectionRing.CardinalVertices[0]), 5.0f, 12, FColor::Yellow, true, 0.0f, 0, 1.0f);
-	DrawDebugSphere(World, GetActorTransform().TransformPosition(TubeIntersection.IntersectionRing.CardinalVertices[1]), 5.0f, 12, FColor::Red, true, 0.0f, 0, 1.0f);
+	DrawDebugSphere(World, GetActorTransform().TransformPosition(TubeIntersection.IntersectionRing.CardinalVertices[1]), 5.0f, 12, FColor::White, true, 0.0f, 0, 1.0f);
 	DrawDebugSphere(World, GetActorTransform().TransformPosition(TubeIntersection.IntersectionRing.CardinalVertices[2]), 5.0f, 12, FColor::Green, true, 0.0f, 0, 1.0f); // left
 	DrawDebugSphere(World, GetActorTransform().TransformPosition(TubeIntersection.IntersectionRing.CardinalVertices[3]), 5.0f, 12, FColor::Purple, true, 0.0f, 0, 1.0f); // right
 
@@ -130,6 +130,25 @@ void AProceduralTubularJointNode::BuildMainTube() {
 	);
 
 	DoobGeometryUtils::OrderSquareIntersectionConnections(TubeIntersection);
+
+	//DrawDebugSphere(World, GetActorTransform().TransformPosition(TubeIntersection.TestVerts[0]), 5.0f, 12, FColor::Purple, true, 0.0f, 0, 1.0f);
+
+	/*for (int32 j = 0; j < TubeIntersection.TestVerts.Num() - 1; ++j) {
+		FVector CurrentVertex = GetActorTransform().TransformPosition(TubeIntersection.TestVerts[j]);
+		FVector NextVertex = GetActorTransform().TransformPosition(TubeIntersection.TestVerts[j + 1]);
+		DrawDebugLine(World, CurrentVertex, NextVertex, FColor::Purple, true, 0.0f, 0, 1.0f);
+		UE_LOG(LogTemp, Log, TEXT("Intersection Remaining Ring Debug iteration: %d, Current Vertex: (X:%f/Y:%f/Z:%f), Next Vertex: (X:%f/Y:%f/Z:%f)"), j, CurrentVertex.X, CurrentVertex.Y, CurrentVertex.Z, NextVertex.X, NextVertex.Y, NextVertex.Z);
+	}*/
+
+	for (int32 i = 0; i < TubeIntersection.IntersectionSquare.TopRightPartialRings.Num(); ++i) {
+		TArray<FVector> CurrentRing = TubeIntersection.IntersectionSquare.TopRightPartialRings[i];
+		for (int32 j = 0; j < CurrentRing.Num() - 1; ++j) {
+			FVector CurrentVertex = GetActorTransform().TransformPosition(CurrentRing[j]);
+			FVector NextVertex = GetActorTransform().TransformPosition(CurrentRing[j + 1]);
+
+			DrawDebugLine(World, CurrentVertex, NextVertex, FColor::Red, true, 0.0f, 0, 1.0f);
+		}
+	}
 
 	DoobGeometryUtils::RemoveVerticesByInterpolatedDirections(TubeIntersection, TubeIntersection.IntersectionSquare);
 

@@ -136,6 +136,7 @@ namespace DoobGeometryUtils {
         FVector Centroid; ///< The geometric center of the intersection ring.
         TArray<FVector> CardinalVertices; ///< The cardinal vertices (e.g., North, East, South, West) in the intersection ring.
         TArray<int32> CardinalIndices; ///< Indices of the cardinal vertices in the vertex array.
+        float MinDistanceBetweenVertices = 5.0f;
     };
 
     /**
@@ -204,6 +205,7 @@ namespace DoobGeometryUtils {
         TArray<FVector> AllVertices; ///< Combined array of vertices from all relevant intersection components.
         TArray<int32> Triangles; ///< Triangle indices defining the mesh for the intersection geometry.
         TArray<FRingData> MainTubePartialRings; ///< Partial rings of the main tube near the intersection.
+        TArray<FVector> TestVerts;
     };
 
 
@@ -299,6 +301,8 @@ namespace DoobGeometryUtils {
         FTwoTubeIntersectionData& TubeIntersectionData,
         FIntersectionSquareData& IntersectionSquare
     );
+
+    bool IsPointOnRing(const FRingData& Ring, const FVector& TestVertex);
 
     // ---------------------------------------------------------------------------------------------------------------------------------------------------- //
     //                                                                 3. Tube Operations                                                                   //
@@ -873,6 +877,8 @@ namespace DoobGeometryUtils {
      * @param Tolerance The tolerance distance used to identify duplicate vertices. Vertices within this distance are considered duplicates. Default is 0.01f.
      */
     void RemoveDuplicateVertices(TArray<FVector>& Vertices, float Tolerance = 0.01f);
+
+    void MergeClosePoints(TArray<FVector>& Points, float MinDistance);
 
     // ---------------------------------------------------------------------------------------------------------------------------------------------------- //
     //                                                        8. Transformations and Interpolations                                                         //
