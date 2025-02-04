@@ -764,7 +764,7 @@ namespace DoobGeometryUtils {
 		FVector LateralTubeReorderDirection = -DoobMathUtils::GetPerpendicularDirection(LateralTube.Direction, MainTube.Direction);
 		FTubeData LateralTubeReordered = ReorderTubeVerticesToDirection(LateralTube, LateralTubeReorderDirection);
 
-		GenerateHalfIntersectionRingUsingCircumference(MainTubeReordered, LateralTube, MainTubeRingIntersectionVerts, false);
+		GenerateHalfIntersectionRingUsingCircumference(MainTubeReordered, LateralTube, MainTubeRingIntersectionVerts);
 		OutRingData.MainTubeVertices.Append(MainTubeRingIntersectionVerts);
 
 		/*GenerateHalfIntersectionRingUsingCircumference(LateralTube, MainTube, LateralTubeRingIntersectionVerts, false);
@@ -1049,9 +1049,9 @@ namespace DoobGeometryUtils {
 		);
 
 		int32 StartIndex = FindVertexIndex(ReorderedIntersection, TubeIntersectionData.IntersectionRing.CardinalVertices[1]) - 1;
-		int32 EndIndexAlt = FindVertexIndex(ReorderedIntersection, TubeIntersectionData.IntersectionRing.CardinalVertices[3]) + 1;
+		//int32 EndIndexAlt = FindVertexIndex(ReorderedIntersection, TubeIntersectionData.IntersectionRing.CardinalVertices[3]) + 1;
 
-		TArray<FVector> NorthSouthVerts = {
+		/*TArray<FVector> NorthSouthVerts = {
 			TubeIntersectionData.IntersectionRing.CardinalVertices[0],
 			TubeIntersectionData.IntersectionRing.CardinalVertices[2]
 		};
@@ -1067,7 +1067,7 @@ namespace DoobGeometryUtils {
 				TubeIntersectionData.IntersectionRing.CombinedVertices,
 				TubeIntersectionData.IntersectionRing.CardinalIndices[2]
 			);
-		}
+		}*/
 
 		FRingData IntersectionRingStartRing;
 		FRingData IntersectionRingEndRing;
@@ -1087,16 +1087,18 @@ namespace DoobGeometryUtils {
 			FirstLateralIntersectionRing
 		);
 
-		FirstLateralIntersectionRing.Vertices.Empty();
+		FirstLateralIntersectionRing.Vertices = ReorderedIntersection;
 
-		for (int32 i = StartIndex; i <= EndIndexAlt; ++i) {
+		/*for (int32 i = StartIndex; i <= EndIndexAlt; ++i) {
 			FVector VertexToAdd = ReorderedIntersection[i];
 
 			FirstLateralIntersectionRing.Vertices.Add(VertexToAdd);
 
 			FVector SuperTempCenter = CalculateCenterLinePoint(VertexToAdd, IntersectionRingStartRing, IntersectionRingEndRing);
 			FVector SuperTempDirection = (VertexToAdd - SuperTempCenter).GetSafeNormal();
-		}
+		}*/
+
+		TubeIntersectionData.LateralTubeIntersectionRings.Rings.Add(FirstLateralIntersectionRing);
 
 		int32 EndIndex = 0;
 
@@ -1121,19 +1123,19 @@ namespace DoobGeometryUtils {
 			}
 			else {
 				PreviousLateralIntersectionRing = CurrentLateralIntersectionRing;
-				int32 ReorderedIntersectionNum = ReorderedIntersection.Num();
+				/*int32 ReorderedIntersectionNum = ReorderedIntersection.Num();
 				TempPreviousVertices.Add(ReorderedIntersection[i]);
-				TempPreviousVertices.Append(CurrentLateralIntersectionRing.Vertices);
+				TempPreviousVertices.Append(CurrentLateralIntersectionRing.Vertices);*/
 
-				if (EndIndexAlt >= ReorderedIntersectionNum) {
+				/*if (EndIndexAlt >= ReorderedIntersectionNum) {
 					EndIndexAlt = 0;
-				}
+				}*/
 
-				TempPreviousVertices.Add(ReorderedIntersection[EndIndexAlt]);
-				PreviousLateralIntersectionRing.Vertices = TempPreviousVertices;
+				/*TempPreviousVertices.Add(ReorderedIntersection[EndIndexAlt]);
+				PreviousLateralIntersectionRing.Vertices = TempPreviousVertices;*/
 			}
 
-			EndIndexAlt++;
+			/*EndIndexAlt++;*/
 
 			CurrentLateralIntersectionRing.Vertices.Empty();
 
@@ -1194,7 +1196,7 @@ namespace DoobGeometryUtils {
 			PreviousLateralIntersectionRing.bIsClosed = false;
 			PreviousLateralIntersectionRing.bIsComplete = false;
 
-			TubeIntersectionData.LateralTubeIntersectionRings.Rings.Add(PreviousLateralIntersectionRing);
+			//TubeIntersectionData.LateralTubeIntersectionRings.Rings.Add(PreviousLateralIntersectionRing);
 			TubeIntersectionData.LateralTubeIntersectionRings.Rings.Add(CurrentLateralIntersectionRing);
 		}
 	}
@@ -1685,7 +1687,8 @@ namespace DoobGeometryUtils {
 			ReversedLateralTubeIntersectionRings.Add(TempReverseRing);
 		}
 
-		ConnectPartialRingArrayPaired(ReversedLateralTubeIntersectionRings, TubeIntersectionData.AllVertices, TubeIntersectionData.Triangles, BaseIndex);
+		//ConnectPartialRingArrayPaired(ReversedLateralTubeIntersectionRings, TubeIntersectionData.AllVertices, TubeIntersectionData.Triangles, BaseIndex);
+		ConnectRingArray(ReversedLateralTubeIntersectionRings, TubeIntersectionData.AllVertices, TubeIntersectionData.Triangles, BaseIndex);
 
 		FullLateralTubeRings.Add(TubeIntersectionData.LateralTubeFirstFullRing);
 

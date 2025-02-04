@@ -140,7 +140,7 @@ void AProceduralTubularJointNode::BuildMainTube() {
 		UE_LOG(LogTemp, Log, TEXT("Intersection Remaining Ring Debug iteration: %d, Current Vertex: (X:%f/Y:%f/Z:%f), Next Vertex: (X:%f/Y:%f/Z:%f)"), j, CurrentVertex.X, CurrentVertex.Y, CurrentVertex.Z, NextVertex.X, NextVertex.Y, NextVertex.Z);
 	}*/
 
-	for (int32 i = 0; i < TubeIntersection.IntersectionSquare.TopRightPartialRings.Num(); ++i) {
+	/*for (int32 i = 0; i < TubeIntersection.IntersectionSquare.TopRightPartialRings.Num(); ++i) {
 		TArray<FVector> CurrentRing = TubeIntersection.IntersectionSquare.TopRightPartialRings[i];
 		for (int32 j = 0; j < CurrentRing.Num() - 1; ++j) {
 			FVector CurrentVertex = GetActorTransform().TransformPosition(CurrentRing[j]);
@@ -148,7 +148,7 @@ void AProceduralTubularJointNode::BuildMainTube() {
 
 			DrawDebugLine(World, CurrentVertex, NextVertex, FColor::Red, true, 0.0f, 0, 1.0f);
 		}
-	}
+	}*/
 
 	DoobGeometryUtils::RemoveVerticesByInterpolatedDirections(TubeIntersection, TubeIntersection.IntersectionSquare);
 
