@@ -159,6 +159,33 @@ namespace DoobGeometryUtils {
         TArray<TArray<FVector>> TopLeftPartialRings; ///< Partial ring vertices associated with the top-left corner.
     };
 
+    struct FEdgeData {
+        int32 VertexAIndex;
+        int32 VertexBIndex;
+        float Length;
+        bool VertexARemoved;
+        bool VertexBRemoved;
+    };
+
+    struct FQuadrilateralData {
+        FEdgeData EdgeA;
+        FEdgeData EdgeB;
+        float TopWidth;
+        float BottomWidth;
+    };
+
+    struct FEdgeRingData {
+        int32 RingAIndex;
+        int32 RingBIndex;
+        TArray<FEdgeData> Edges;
+    };
+
+    struct FQuadrilateralRingData {
+        int32 RingAIndex;
+        int32 RingBIndex;
+        float Height;
+    };
+
     /**
      * @struct FTubeData
      * Represents data for a 3D tube constructed from rings and a 2D profile.
@@ -200,6 +227,7 @@ namespace DoobGeometryUtils {
         FRingData MTAboveIntersectionRingPartial; ///< Partial ring of the main tube above the intersection.
         FRingData MTBelowIntersectionRingPartial; ///< Partial ring of the main tube below the intersection.
         FTubeData LateralTubeIntersectionRings; ///< Tube data for the rings in the lateral tube around the intersection.
+        FTubeData MainTubeRemovedVertices;
         FRingData LateralTubeFirstFullRing; ///< The first complete ring in the lateral tube after the intersection.
         FTubeData LateralTubeRemovedVertices; ///< Data representing vertices removed from the lateral tube during intersection processing.
         TArray<FVector> AllVertices; ///< Combined array of vertices from all relevant intersection components.
@@ -453,6 +481,7 @@ namespace DoobGeometryUtils {
         const FTubeData& TubeA,
         const FTubeData& TubeB,
         TArray<FVector>& OutRingVertices,
+        bool bReverse = false,
         float Precision = KINDA_SMALL_NUMBER
     );
 
@@ -803,6 +832,7 @@ namespace DoobGeometryUtils {
      * @warning The function assumes that the `MainTubeIntersectionRings` contains at least one ring; otherwise, a warning will be logged.
      */
     void OrderSquareIntersectionConnectionsOneCorner(
+        const FTubeData& MainTube,
         const FTubeData& MainTubeIntersectionRings,
         const FTubeData& LateralTube,
         const TArray<FVector> RingVertices,
@@ -879,6 +909,8 @@ namespace DoobGeometryUtils {
     void RemoveDuplicateVertices(TArray<FVector>& Vertices, float Tolerance = 0.01f);
 
     void MergeClosePoints(TArray<FVector>& Points, float MinDistance);
+
+    void OrderVerticesByDistanceToPoint(TArray<FVector>& Vertices, const FVector& ReferencePoint);
 
     // ---------------------------------------------------------------------------------------------------------------------------------------------------- //
     //                                                        8. Transformations and Interpolations                                                         //
