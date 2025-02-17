@@ -178,12 +178,14 @@ namespace DoobGeometryUtils {
         int32 RingAIndex;
         int32 RingBIndex;
         TArray<FEdgeData> Edges;
+        bool IntersectingEdge; // -------------------------- add in when you get back
     };
 
     struct FQuadrilateralRingData {
         int32 RingAIndex;
         int32 RingBIndex;
         float Height;
+        TArray<FQuadrilateralData> Quadrilaterals;
     };
 
     /**
@@ -197,6 +199,9 @@ namespace DoobGeometryUtils {
     struct FTubeData {
         DoobProfileUtils::F2DProfile Profile;  ///< The 2D profile defining the tube's cross-section shape.
         TArray<FRingData> Rings; ///< Array of rings forming the tube, representing its geometry.
+        TArray<FEdgeRingData> RingEdges;
+        TArray<FEdgeRingData> SideEdges;
+        TArray<FQuadrilateralRingData> Quadrilaterals;
         FVector StartPosition; ///< The starting position of the tube in 3D space.
         FVector EndPosition; ///< The ending position of the tube in 3D space.
         FVector Direction; ///< The directional vector indicating the tube's orientation.
@@ -384,7 +389,7 @@ namespace DoobGeometryUtils {
      * @note If all vertices of a ring in TubeB are removed, that ring is excluded from the resulting TubeB.
      * The function ensures that ring properties such as center, direction, and radius are preserved for retained rings.
      */
-    void RemoveInternalVertices(const FTubeData& TubeA, FTubeData& TubeB);
+    void RemoveInternalVertices(const FTubeData& TubeA, FTubeData& TubeB, FTubeData& OutTube);
 
     /**
      * @brief Finds the segment in a tube where a given point lies and assigns the corresponding start and end rings.
@@ -436,6 +441,8 @@ namespace DoobGeometryUtils {
 
     FTubeData ReorderTubeVerticesToDirection(const FTubeData& InputTube, const FVector& InputDirection);
 
+    void GenerateTubeEdgesQuadrilaterals(FTubeData& Tube);
+
     // ---------------------------------------------------------------------------------------------------------------------------------------------------- //
     //                                                            4. Intersection Calculations                                                              //
     // ---------------------------------------------------------------------------------------------------------------------------------------------------- //
@@ -481,7 +488,7 @@ namespace DoobGeometryUtils {
         const FTubeData& TubeA,
         const FTubeData& TubeB,
         TArray<FVector>& OutRingVertices,
-        bool bReverse = false,
+        bool bRingEdges = false,
         float Precision = KINDA_SMALL_NUMBER
     );
 
@@ -1011,6 +1018,8 @@ namespace DoobGeometryUtils {
      * the function returns false.
      */
     bool IsPointInsidePolygon(const TArray<FVector>& RingVertices, const FVector& Point, const FVector& RingCenter);
+
+    bool IsPointInsidePolygonWinding(const TArray<FVector>& Polygon, const FVector& Point, const FVector& Centroid);
 
     /**
      * @brief Checks if a vertex lies within the angular range of a square.
