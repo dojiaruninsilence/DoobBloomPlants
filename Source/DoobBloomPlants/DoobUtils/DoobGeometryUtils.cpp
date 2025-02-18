@@ -196,8 +196,8 @@ namespace DoobGeometryUtils {
 		// Find highest (north) and lowest (south) points
 		int32 LowestIndex, HighestIndex;
 		FVector LowestVertex, HighestVertex;
-		DoobGeometryUtils::FindClosestVertex(StartCenter, IntersectionRing.CombinedVertices, LowestVertex, LowestIndex);
-		DoobGeometryUtils::FindClosestVertex(EndCenter, IntersectionRing.CombinedVertices, HighestVertex, HighestIndex);
+		FindClosestVertex(StartCenter, IntersectionRing.CombinedVertices, LowestVertex, LowestIndex);
+		FindClosestVertex(EndCenter, IntersectionRing.CombinedVertices, HighestVertex, HighestIndex);
 
 		// Calculate the ring's center
 		FVector RingCenter = ComputeCentroid(IntersectionRing.CombinedVertices);
@@ -205,36 +205,86 @@ namespace DoobGeometryUtils {
 		// Define the ring's axis (from StartCenter to EndCenter)
 		FVector RingAxis = (EndCenter - StartCenter).GetSafeNormal();
 
-		// Define a perpendicular axis
-		FVector UpVector = FVector::UpVector; // Can be replaced with another consistent vector
-		FVector PerpendicularAxis = FVector::CrossProduct(UpVector, RingAxis).GetSafeNormal();
+		// new if not working ----------------------------------------------------------------------
+		
+		// Compute the tube's midpoint from the main tube start and end positions.
+		FVector TubeMidpoint = (StartCenter + EndCenter) * 0.5f;
 
-		// Ensure the PerpendicularAxis is valid
-		if (PerpendicularAxis.IsZero()) {
-			PerpendicularAxis = FVector::CrossProduct(FVector::RightVector, RingAxis).GetSafeNormal();
+		// Compute the "inside vector": from the ring center toward the tube's midpoint.
+		// This vector points inward (i.e. toward the inside of the tube).
+		FVector InsideVector = (TubeMidpoint - RingCenter).GetSafeNormal();
+
+		// Now, compute a "right reference" vector.
+		// We want to define "right" in a way that is consistent no matter the lateral tube's sign.
+		// Compute it as the cross product of the ring axis and the inside vector.
+		FVector RightRef = FVector::CrossProduct(RingAxis, InsideVector).GetSafeNormal();
+
+		// For safety, if RightRef is nearly zero (degenerate case), use an alternative.
+		if (RightRef.IsNearlyZero())
+		{
+			RightRef = FVector::CrossProduct(RingAxis, FVector::RightVector).GetSafeNormal();
 		}
 
-		// Find left and right points based on the perpendicular axis
+		// At this point, a positive projection onto RightRef means the vertex is on the "right" side
+		// (when viewing from outside the tube, where the inside is toward TubeMidpoint), 
+		// and a negative projection means it is on the "left" side.
+
+		// Find left and right points based on the dot product with RightRef.
 		float MaxProjection = -FLT_MAX;
 		float MinProjection = FLT_MAX;
-		FVector LeftVertex, RightVertex;
-		int32 LeftIndex = -1, RightIndex = -1;
+		FVector RightVertex, LeftVertex;
+		int32 RightIndex = -1, LeftIndex = -1;
 
-		for (int32 i = 0; i < ArraySize; i++) {
-			float Projection = FVector::DotProduct(IntersectionRing.CombinedVertices[i] - RingCenter, PerpendicularAxis);
+		for (int32 i = 0; i < ArraySize; i++)
+		{
+			float Projection = FVector::DotProduct(IntersectionRing.CombinedVertices[i] - RingCenter, RightRef);
 
-			if (Projection > MaxProjection) {
+			if (Projection > MaxProjection)
+			{
 				MaxProjection = Projection;
 				RightVertex = IntersectionRing.CombinedVertices[i];
 				RightIndex = i;
 			}
-
-			if (Projection < MinProjection) {
+			if (Projection < MinProjection)
+			{
 				MinProjection = Projection;
 				LeftVertex = IntersectionRing.CombinedVertices[i];
 				LeftIndex = i;
 			}
 		}
+
+		// old if not working ----------------------------------------------------------------------
+
+		// Define a perpendicular axis
+		//FVector UpVector = FVector::UpVector; // Can be replaced with another consistent vector
+		//FVector PerpendicularAxis = FVector::CrossProduct(UpVector, RingAxis).GetSafeNormal();
+
+		//// Ensure the PerpendicularAxis is valid
+		//if (PerpendicularAxis.IsZero()) {
+		//	PerpendicularAxis = FVector::CrossProduct(FVector::RightVector, RingAxis).GetSafeNormal();
+		//}
+
+		//// Find left and right points based on the perpendicular axis
+		//float MaxProjection = -FLT_MAX;
+		//float MinProjection = FLT_MAX;
+		//FVector LeftVertex, RightVertex;
+		//int32 LeftIndex = -1, RightIndex = -1;
+
+		//for (int32 i = 0; i < ArraySize; i++) {
+		//	float Projection = FVector::DotProduct(IntersectionRing.CombinedVertices[i] - RingCenter, PerpendicularAxis);
+
+		//	if (Projection > MaxProjection) {
+		//		MaxProjection = Projection;
+		//		RightVertex = IntersectionRing.CombinedVertices[i];
+		//		RightIndex = i;
+		//	}
+
+		//	if (Projection < MinProjection) {
+		//		MinProjection = Projection;
+		//		LeftVertex = IntersectionRing.CombinedVertices[i];
+		//		LeftIndex = i;
+		//	}
+		//}
 
 		// Assign cardinal points
 		IntersectionRing.CardinalVertices = { HighestVertex, RightVertex, LowestVertex, LeftVertex };
@@ -1331,10 +1381,10 @@ namespace DoobGeometryUtils {
 		FVector RightDirection = (RightVertex - PointCenter).GetSafeNormal();
 
 		// find intersection on the lowest and highest rings
-		FVector BottomLeft = FindIntersectionOnRing(LowestRing.Vertices, LeftDirection, LowestRing.Center);
-		FVector BottomRight = FindIntersectionOnRing(LowestRing.Vertices, RightDirection, LowestRing.Center);
-		FVector TopLeft = FindIntersectionOnRing(HighestRing.Vertices, LeftDirection, HighestRing.Center);
-		FVector TopRight = FindIntersectionOnRing(HighestRing.Vertices, RightDirection, HighestRing.Center);
+		FVector BottomLeft = FindIntersectionOnNewRing(LowestRing.Vertices, LeftDirection, LowestRing.Center, LeftVertex);
+		FVector BottomRight = FindIntersectionOnNewRing(LowestRing.Vertices, RightDirection, LowestRing.Center, RightVertex);
+		FVector TopLeft = FindIntersectionOnNewRing(HighestRing.Vertices, LeftDirection, HighestRing.Center, LeftVertex);
+		FVector TopRight = FindIntersectionOnNewRing(HighestRing.Vertices, RightDirection, HighestRing.Center, RightVertex);
 
 		// store vertices in output array
 		OutSquareVertices = { BottomLeft, BottomRight, TopRight, TopLeft };
@@ -2652,10 +2702,10 @@ namespace DoobGeometryUtils {
 		FVector BottomLeftDirection = (ReorderedIntersection[LeftIndex] - BottomLeftCenterline).GetSafeNormal();
 		FVector TopLeftDirection = (ReorderedIntersection[0] - TopLeftCenterline).GetSafeNormal();
 
-		FVector TempTopRightPoint = FindIntersectionOnRing(TubeIntersectionData.MTAboveIntersectionRing.Vertices, TopRightDirection, TubeIntersectionData.MTAboveIntersectionRing.Center);
-		FVector TempBottomRightPoint = FindIntersectionOnRing(TubeIntersectionData.MTBelowIntersectionRing.Vertices, BottomRightDirection, TubeIntersectionData.MTBelowIntersectionRing.Center);
-		FVector TempBottomLeftPoint = FindIntersectionOnRing(TubeIntersectionData.MTBelowIntersectionRing.Vertices, BottomLeftDirection, TubeIntersectionData.MTBelowIntersectionRing.Center);
-		FVector TempTopLeftPoint = FindIntersectionOnRing(TubeIntersectionData.MTAboveIntersectionRing.Vertices, TopLeftDirection, TubeIntersectionData.MTAboveIntersectionRing.Center);
+		FVector TempTopRightPoint = FindIntersectionOnNewRing(TubeIntersectionData.MTAboveIntersectionRing.Vertices, TopRightDirection, TubeIntersectionData.MTAboveIntersectionRing.Center, ReorderedIntersection[RightIndex]);
+		FVector TempBottomRightPoint = FindIntersectionOnNewRing(TubeIntersectionData.MTBelowIntersectionRing.Vertices, BottomRightDirection, TubeIntersectionData.MTBelowIntersectionRing.Center, ReorderedIntersection[BottomIndex]);
+		FVector TempBottomLeftPoint = FindIntersectionOnNewRing(TubeIntersectionData.MTBelowIntersectionRing.Vertices, BottomLeftDirection, TubeIntersectionData.MTBelowIntersectionRing.Center, ReorderedIntersection[LeftIndex]);
+		FVector TempTopLeftPoint = FindIntersectionOnNewRing(TubeIntersectionData.MTAboveIntersectionRing.Vertices, TopLeftDirection, TubeIntersectionData.MTAboveIntersectionRing.Center, ReorderedIntersection[0]);
 
 		TempTopRightSquareVertices.Add(TempTopRightPoint);
 		TempBottomRightSquareVertices.Add(TempBottomRightPoint);
