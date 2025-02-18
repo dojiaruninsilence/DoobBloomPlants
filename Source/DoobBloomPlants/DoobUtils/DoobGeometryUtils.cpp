@@ -60,43 +60,112 @@ namespace DoobGeometryUtils {
 	}
 
 	TArray<FVector> OrderRingVertices(const TArray<FVector>& InputVertices) {
+
+		// Compute the centroid of the input vertices.
 		FVector Centroid = ComputeCentroid(InputVertices);
-
-		// array to store vertices with angles
 		TArray<TPair<float, FVector>> VerticesWithAngles;
+		int32 NumVertices = InputVertices.Num();
 
-		// Compute a better plane normal based on averaging cross products of centroid and vertices
+		// Compute an average normal for the polygon by summing cross products
 		FVector AverageNormal = FVector::ZeroVector;
-		for (int32 i = 0; i < InputVertices.Num(); i++) {
-			FVector NextVertex = InputVertices[(i + 1) % InputVertices.Num()];
+		for (int32 i = 0; i < NumVertices; i++)
+		{
+			FVector NextVertex = InputVertices[(i + 1) % NumVertices];
 			FVector Edge1 = InputVertices[i] - Centroid;
 			FVector Edge2 = NextVertex - Centroid;
 			AverageNormal += FVector::CrossProduct(Edge1, Edge2);
 		}
-		AverageNormal = AverageNormal.GetSafeNormal(); // Normalize the average normal
+		AverageNormal.Normalize();
 
-		// project vertices onto a plane
-		for (const FVector& Vertex : InputVertices) {
+		// Establish a local 2D coordinate system in the plane of the polygon.
+		// Choose a reference vector from the centroid to the first vertex.
+		FVector Ref = (InputVertices[0] - Centroid).GetSafeNormal();
+		// Compute a perpendicular vector in the plane using the average normal.
+		FVector Perp = FVector::CrossProduct(AverageNormal, Ref).GetSafeNormal();
+
+		// For each vertex, compute its angle relative to our local axes.
+		for (const FVector& Vertex : InputVertices)
+		{
 			FVector Offset = Vertex - Centroid;
-			FVector Projected = Offset - FVector::DotProduct(Offset, AverageNormal) * AverageNormal;
-
-			// compute angle in projected space
-			float Angle = FMath::Atan2(Projected.Y, Projected.X);
+			float x = FVector::DotProduct(Offset, Ref);
+			float y = FVector::DotProduct(Offset, Perp);
+			float Angle = FMath::Atan2(y, x);
 			VerticesWithAngles.Add(TPair<float, FVector>(Angle, Vertex));
 		}
 
-		// sort vertices by angle
-		VerticesWithAngles.Sort([](const TPair<float, FVector>& A, const TPair<float, FVector>& B) {
-			return A.Key < B.Key; // sort by angle
+		// Sort vertices by angle (ascending)
+		VerticesWithAngles.Sort([](const TPair<float, FVector>& A, const TPair<float, FVector>& B)
+			{
+				return A.Key < B.Key;
 			});
 
-		// extract sorted vertices
+		// Extract the sorted vertices.
 		TArray<FVector> SortedVertices;
-		for (const TPair<float, FVector>& Pair : VerticesWithAngles) {
+		for (const TPair<float, FVector>& Pair : VerticesWithAngles)
+		{
 			SortedVertices.Add(Pair.Value);
 		}
 
+		// Compute the signed area of the polygon in our 2D coordinate system.
+		// Using the shoelace formula.
+		float SignedArea = 0.0f;
+		for (int32 i = 0; i < SortedVertices.Num(); i++)
+		{
+			int32 j = (i + 1) % SortedVertices.Num();
+			FVector OffsetI = SortedVertices[i] - Centroid;
+			FVector OffsetJ = SortedVertices[j] - Centroid;
+			float x_i = FVector::DotProduct(OffsetI, Ref);
+			float y_i = FVector::DotProduct(OffsetI, Perp);
+			float x_j = FVector::DotProduct(OffsetJ, Ref);
+			float y_j = FVector::DotProduct(OffsetJ, Perp);
+			SignedArea += (x_i * y_j - x_j * y_i);
+		}
+		// In our coordinate system, a positive signed area means counter-clockwise.
+		// If we need clockwise order, we want a negative area.
+		if (SignedArea > 0)
+		{
+			Algo::Reverse(SortedVertices);
+		}
+
 		return SortedVertices;
+
+		//FVector Centroid = ComputeCentroid(InputVertices);
+
+		//// array to store vertices with angles
+		//TArray<TPair<float, FVector>> VerticesWithAngles;
+
+		//// Compute a better plane normal based on averaging cross products of centroid and vertices
+		//FVector AverageNormal = FVector::ZeroVector;
+		//for (int32 i = 0; i < InputVertices.Num(); i++) {
+		//	FVector NextVertex = InputVertices[(i + 1) % InputVertices.Num()];
+		//	FVector Edge1 = InputVertices[i] - Centroid;
+		//	FVector Edge2 = NextVertex - Centroid;
+		//	AverageNormal += FVector::CrossProduct(Edge1, Edge2);
+		//}
+		//AverageNormal = AverageNormal.GetSafeNormal(); // Normalize the average normal
+
+		//// project vertices onto a plane
+		//for (const FVector& Vertex : InputVertices) {
+		//	FVector Offset = Vertex - Centroid;
+		//	FVector Projected = Offset - FVector::DotProduct(Offset, AverageNormal) * AverageNormal;
+
+		//	// compute angle in projected space
+		//	float Angle = FMath::Atan2(Projected.Y, Projected.X);
+		//	VerticesWithAngles.Add(TPair<float, FVector>(Angle, Vertex));
+		//}
+
+		//// sort vertices by angle
+		//VerticesWithAngles.Sort([](const TPair<float, FVector>& A, const TPair<float, FVector>& B) {
+		//	return A.Key < B.Key; // sort by angle
+		//	});
+
+		//// extract sorted vertices
+		//TArray<FVector> SortedVertices;
+		//for (const TPair<float, FVector>& Pair : VerticesWithAngles) {
+		//	SortedVertices.Add(Pair.Value);
+		//}
+
+		//return SortedVertices;
 	}
 
 	TArray<FVector> ReorderRingVerticesToDirection(const TArray<FVector>& RingVertices, const FVector& InputDirection) {
@@ -2763,9 +2832,9 @@ namespace DoobGeometryUtils {
 			Algo::Reverse(TempBottomLeftPartialRings[i]);
 		}
 
-		// < ----------------------------------------------------------------------------------------------------------------
-
 		TubeIntersectionData.IntersectionSquare.BottomLeftPartialRings = TempBottomLeftPartialRings;
+
+		// < ----------------------------------------------------------------------------------------------------------------
 
 		UE_LOG(LogTemp, Log, TEXT("Bottom Left Intersection connections"));
 
