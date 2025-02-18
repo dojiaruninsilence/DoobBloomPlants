@@ -764,63 +764,150 @@ namespace DoobGeometryUtils {
 		FRingData& StartRing,
 		FRingData& EndRing
 	) {
-		// Initialize with fallback values
-		/*StartRing = FRingData();
-		EndRing = FRingData();*/
+		// new if it doesnt work ----------------------------------------------------------------------------------------------------------
 
-		TArray<TArray<FRingData>> RingPairs;
+		// A local structure to hold candidate ring pairs and associated error metrics.
+		struct FRingPairCandidate
+		{
+			FRingData Start;
+			FRingData End;
+			float t;         // Normalized projection parameter along the segment (0 = at Start, 1 = at End)
+			float PerpError; // Perpendicular distance error from the point to the segment
+		};
 
-		// iterate through the rings to find the segments the point is between
-		for (int32 i = 0; i < Tube.Rings.Num() - 1; ++i) {
-			// get the current ring and the next ring
+		TArray<FRingPairCandidate> Candidates;
+		int32 NumRings = Tube.Rings.Num();
+
+		// Iterate over each adjacent pair of rings.
+		for (int32 i = 0; i < NumRings - 1; i++)
+		{
 			FRingData CurrentRing = Tube.Rings[i];
 			FRingData NextRing = Tube.Rings[i + 1];
 
-			// Skip pairs with empty vertices
+			// Skip if either ring has no vertices.
 			if (CurrentRing.Vertices.IsEmpty() || NextRing.Vertices.IsEmpty())
 			{
 				UE_LOG(LogTemp, Warning, TEXT("Skipping ring pair %d-%d (empty vertices)"), i, i + 1);
 				continue;
 			}
 
-			// calc the distance between the 2 rings
+			// Calculate the segment length and direction.
 			float SegmentLength = FVector::Dist(CurrentRing.Center, NextRing.Center);
+			FVector Direction = (NextRing.Center - CurrentRing.Center).GetSafeNormal();
 
-			// calc the length of the point relative to current ring - for interpolation
+			// Project the point onto the line defined by the segment.
 			FVector PointToCurrentRing = Point - CurrentRing.Center;
-			float PointLength = FVector::DotProduct(PointToCurrentRing, (NextRing.Center - CurrentRing.Center).GetSafeNormal());
+			float ProjectionLength = FVector::DotProduct(PointToCurrentRing, Direction);
 
-			// check if point is within segments
-			if (PointLength >= 0 && PointLength <= SegmentLength) {
-				TArray<FRingData> RingPair;
-				RingPair.Add(CurrentRing);
-				RingPair.Add(NextRing);
-				RingPairs.Add(RingPair);
-				StartRing = CurrentRing;
-				EndRing = NextRing;
+			// Normalize t relative to the segment length.
+			float t = ProjectionLength / SegmentLength;
+
+			// Only consider candidate pairs where the projection falls within the segment.
+			if (t >= 0.0f && t <= 1.0f)
+			{
+				// Compute the actual projected point on the segment.
+				FVector ProjectedPoint = CurrentRing.Center + t * (NextRing.Center - CurrentRing.Center);
+
+				// Compute the perpendicular distance from the point to the segment.
+				float PerpError = FVector::Dist(Point, ProjectedPoint);
+
+				// Store this candidate.
+				FRingPairCandidate Candidate;
+				Candidate.Start = CurrentRing;
+				Candidate.End = NextRing;
+				Candidate.t = t;
+				Candidate.PerpError = PerpError;
+				Candidates.Add(Candidate);
 			}
 		}
 
-		float MinDistance = FLT_MAX;
+		// If no valid candidate is found, log a warning and exit.
+		if (Candidates.Num() == 0)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("No valid ring pair found for point %s"), *Point.ToString());
+			return;
+		}
 
-		for (int32 i = 0; i < RingPairs.Num(); i++) {
-			float DistanceToStart = FVector::DistSquared(Point, RingPairs[i][0].Center);
-			float DistanceToEnd = FVector::DistSquared(Point, RingPairs[i][1].Center);
-
-			float Distance;
-			if (DistanceToStart > DistanceToEnd) {
-				Distance = DistanceToStart;
-			}
-			else {
-				Distance = DistanceToEnd;
-			}
-
-			if (Distance < MinDistance) {
-				MinDistance = Distance;
-				StartRing = RingPairs[i][0];
-				EndRing = RingPairs[i][1];
+		// Select the candidate with the best score.
+		// We define the score as:
+		//   Score = |t - 0.5| + PerpError
+		// so that the ideal candidate is one where the point falls near the middle of the segment
+		// and is as close as possible to the line connecting the two ring centers.
+		float BestScore = FLT_MAX;
+		FRingPairCandidate BestCandidate;
+		for (const FRingPairCandidate& Candidate : Candidates)
+		{
+			float Score = FMath::Abs(Candidate.t - 0.5f) + Candidate.PerpError;  // You can weight these terms if needed
+			if (Score < BestScore)
+			{
+				BestScore = Score;
+				BestCandidate = Candidate;
 			}
 		}
+
+		// Finally, assign the best candidate's rings to the output parameters.
+		StartRing = BestCandidate.Start;
+		EndRing = BestCandidate.End;
+
+		// old if it doesnt work ----------------------------------------------------------------------------------------------------------
+
+		// Initialize with fallback values
+		/*StartRing = FRingData();
+		EndRing = FRingData();*/
+
+		//TArray<TArray<FRingData>> RingPairs;
+
+		//// iterate through the rings to find the segments the point is between
+		//for (int32 i = 0; i < Tube.Rings.Num() - 1; ++i) {
+		//	// get the current ring and the next ring
+		//	FRingData CurrentRing = Tube.Rings[i];
+		//	FRingData NextRing = Tube.Rings[i + 1];
+
+		//	// Skip pairs with empty vertices
+		//	if (CurrentRing.Vertices.IsEmpty() || NextRing.Vertices.IsEmpty())
+		//	{
+		//		UE_LOG(LogTemp, Warning, TEXT("Skipping ring pair %d-%d (empty vertices)"), i, i + 1);
+		//		continue;
+		//	}
+
+		//	// calc the distance between the 2 rings
+		//	float SegmentLength = FVector::Dist(CurrentRing.Center, NextRing.Center);
+
+		//	// calc the length of the point relative to current ring - for interpolation
+		//	FVector PointToCurrentRing = Point - CurrentRing.Center;
+		//	float PointLength = FVector::DotProduct(PointToCurrentRing, (NextRing.Center - CurrentRing.Center).GetSafeNormal());
+
+		//	// check if point is within segments
+		//	if (PointLength >= 0 && PointLength <= SegmentLength) {
+		//		TArray<FRingData> RingPair;
+		//		RingPair.Add(CurrentRing);
+		//		RingPair.Add(NextRing);
+		//		RingPairs.Add(RingPair);
+		//		StartRing = CurrentRing;
+		//		EndRing = NextRing;
+		//	}
+		//}
+
+		//float MinDistance = FLT_MAX;
+
+		//for (int32 i = 0; i < RingPairs.Num(); i++) {
+		//	float DistanceToStart = FVector::DistSquared(Point, RingPairs[i][0].Center);
+		//	float DistanceToEnd = FVector::DistSquared(Point, RingPairs[i][1].Center);
+
+		//	float Distance;
+		//	if (DistanceToStart > DistanceToEnd) {
+		//		Distance = DistanceToStart;
+		//	}
+		//	else {
+		//		Distance = DistanceToEnd;
+		//	}
+
+		//	if (Distance < MinDistance) {
+		//		MinDistance = Distance;
+		//		StartRing = RingPairs[i][0];
+		//		EndRing = RingPairs[i][1];
+		//	}
+		//}
 	}
 
 	void RemoveVerticesInsideSquareByAngle(
