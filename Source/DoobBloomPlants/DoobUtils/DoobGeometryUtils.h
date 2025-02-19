@@ -232,6 +232,7 @@ namespace DoobGeometryUtils {
         FRingData MTAboveIntersectionRingPartial; ///< Partial ring of the main tube above the intersection.
         FRingData MTBelowIntersectionRingPartial; ///< Partial ring of the main tube below the intersection.
         FTubeData LateralTubeIntersectionRings; ///< Tube data for the rings in the lateral tube around the intersection.
+        TArray<FRingData> LateralTubeJointRings;
         FTubeData MainTubeRemovedVertices;
         FRingData LateralTubeFirstFullRing; ///< The first complete ring in the lateral tube after the intersection.
         FTubeData LateralTubeRemovedVertices; ///< Data representing vertices removed from the lateral tube during intersection processing.

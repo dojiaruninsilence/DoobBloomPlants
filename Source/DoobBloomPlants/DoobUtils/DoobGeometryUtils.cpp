@@ -1178,7 +1178,7 @@ namespace DoobGeometryUtils {
 			}
 
 			if (!CurrentEdgeRing.IntersectingEdge) {
-				continue;
+				//continue;
 			}
 
 			int32 NumEdges = CurrentEdgeRing.Edges.Num();
@@ -1228,13 +1228,47 @@ namespace DoobGeometryUtils {
 						}*/
 
 						// check for intersection with triangles
-						FVector IntersectionPoint;
+
+						// < ---------------------- new if it does not work
+
+						if (bBothRemoved || bNeitherRemoved) {
+							FVector IntersectionPoint1;
+							FVector IntersectionPoint2;
+
+							bool bDoesIntersect1 = LineSegmentIntersectsQuadrilateral(LineStartA, LineEndA, V0, V1, V2, V3, IntersectionPoint1)/* ||
+								LineSegmentIntersectsTriangle(LineStartA, LineEndA, V0, V1, V2, IntersectionPoint1) ||
+								LineSegmentIntersectsTriangle(LineStartA, LineEndA, V1, V2, V3, IntersectionPoint1)*/;
+							bool bDoesIntersect2 = LineSegmentIntersectsQuadrilateral(LineEndA, LineStartA, V0, V1, V2, V3, IntersectionPoint2)/* ||
+								LineSegmentIntersectsTriangle(LineEndA, LineStartA, V0, V1, V2, IntersectionPoint1) ||
+								LineSegmentIntersectsTriangle(LineEndA, LineStartA, V1, V2, V3, IntersectionPoint1)*/;
+
+							if (bDoesIntersect1) {
+								OutRingVertices.Add(IntersectionPoint1);
+							}
+							if (bDoesIntersect2) {
+								OutRingVertices.Add(IntersectionPoint2);
+							}
+						}
+						else {
+							FVector IntersectionPoint;
+
+							bool bDoesIntersect = LineSegmentIntersectsQuadrilateral(LineStartA, LineEndA, V0, V1, V2, V3, IntersectionPoint)/* ||
+								LineSegmentIntersectsTriangle(LineStartA, LineEndA, V0, V1, V2, IntersectionPoint) ||
+								LineSegmentIntersectsTriangle(LineStartA, LineEndA, V1, V2, V3, IntersectionPoint)*/;
+
+							if (bDoesIntersect) {
+								OutRingVertices.Add(IntersectionPoint);
+							}
+						}
+
+						// < ---------------------- old if it does not work
+						/*FVector IntersectionPoint;
 
 						bool DoesIntersect = LineSegmentIntersectsQuadrilateral(LineStartA, LineEndA, V0, V1, V2, V3, IntersectionPoint);
 
 						if (DoesIntersect) {
 							OutRingVertices.Add(IntersectionPoint);
-						}
+						}*/
 					}
 				}
 			}
@@ -1758,6 +1792,46 @@ namespace DoobGeometryUtils {
 				TempCurrentVertices.Add(TempCurrentVertex);
 			}
 
+			// --------------------- need to change this to append the temp current vertices, then we need to remove duplicate vertices, then use the order ring function < -----------------------------------------------
+			// --------------------- we can then get the index 0 vertex from the last ring and then reorder the array with we may want to make 2 of these rings and connect them together specially in the connection logic
+
+			// new if it doesnt work ---------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+			//FRingData StartJointRing = TubeIntersectionData.LateralTubeIntersectionRings.Rings.Last();
+			//FRingData EndJointRing = FirstFullLateralRing;
+
+			//TArray<FVector> JointRingVertices;
+
+			//EndJointRing.Vertices.Append(TempCurrentVertices);
+
+			//RemoveDuplicateVertices(EndJointRing.Vertices);
+
+			//OrderRingVertices(EndJointRing.Vertices);
+
+			////Algo::Reverse(EndJointRing.Vertices);
+
+			//int32 NumJointRingVerts = EndJointRing.Vertices.Num();
+
+			//// we need to make a function of this we use it a bunch < ------------------------------------------------------------
+			//for (int32 i = 0; i < NumJointRingVerts; i++) {
+			//	FRingData JointStartRing;
+			//	FRingData JointEndRing;
+			//	FVector JointVertex = EndJointRing.Vertices[i];
+			//	FindSegmentForPoint(JointVertex, TubeIntersectionData.LateralTube, JointStartRing, JointEndRing);
+			//	FVector JointCenterLinePoint = CalculateCenterLinePoint(JointVertex, JointStartRing, JointEndRing);
+			//	FVector JointDirection = (JointVertex - JointCenterLinePoint).GetSafeNormal();
+			//	FVector CurrentVertex = FindIntersectionOnNewRing(StartJointRing.Vertices, JointDirection, StartJointRing.Center, JointVertex);
+			//	JointRingVertices.Add(CurrentVertex);
+			//}
+
+			//StartJointRing.Vertices = JointRingVertices;
+
+			//TubeIntersectionData.LateralTubeJointRings = { StartJointRing, EndJointRing };
+
+			/*TubeIntersectionData.LateralTubeJointRings.Add(StartJointRing);
+			TubeIntersectionData.LateralTubeJointRings.Add(EndJointRing);*/
+
+			// old if it doesnt work ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 			FirstFullLateralRing.Vertices = TempCurrentVertices;
 			TubeIntersectionData.LateralTubeIntersectionRings.Rings.Add(FirstFullLateralRing);
 		//}
@@ -2065,74 +2139,260 @@ namespace DoobGeometryUtils {
 		const FVector& V3,
 		FVector& OutIntersectionPoint
 	) {
-		// compute plane normal using cross product of two edges
+		// new if does not work -----------------------------------------------------------------------------------------------------------------------------------------
+
+		// -----------------------------------------------------------
+		// 1. Compute the plane of the quadrilateral.
 		FVector Edge1 = V1 - V0;
 		FVector Edge2 = V3 - V0;
 		FVector PlaneNormal = FVector::CrossProduct(Edge1, Edge2).GetSafeNormal();
-
-		// compute plane equation: N . (P - V0) = 0
-		float PlaneD = -FVector::DotProduct(PlaneNormal, V0);
-
-		// compute line direction
-		FVector LineDir = LineEnd - LineStart;
-		float Denom = FVector::DotProduct(PlaneNormal, LineDir);
-
-		// check if the line is parallel to the plane
-		if (FMath::Abs(Denom) < KINDA_SMALL_NUMBER) {
-			//UE_LOG(LogTemp, Log, TEXT("Line is parallel to the plane V0: %s, V1: %s, V2: %s, V3: %s, LineStart: %s, LineEnd: %s"), *V0.ToString(), *V1.ToString(), *V2.ToString(), *V3.ToString(), *LineStart.ToString(), *LineEnd.ToString());
+		if (PlaneNormal.IsNearlyZero())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Degenerate quadrilateral: plane normal is zero."));
 			return false;
 		}
 
-		// compute the intersection point with the plane
-		float T = -(FVector::DotProduct(PlaneNormal, LineStart) + PlaneD) / Denom;
-		if (T < 0.0f || T > 1.0f) {
-			//UE_LOG(LogTemp, Log, TEXT("Intersection is outside the line segment V0: %s, V1: %s, V2: %s, V3: %s, LineStart: %s, LineEnd: %s"), *V0.ToString(), *V1.ToString(), *V2.ToString(), *V3.ToString(), *LineStart.ToString(), *LineEnd.ToString());
-			return false; // intersection outside the line segment
+		// Plane equation: PlaneNormal . (P - V0) = 0  =>  D = -PlaneNormal dot V0
+		float PlaneD = -FVector::DotProduct(PlaneNormal, V0);
+
+		// -----------------------------------------------------------
+		// 2. Compute the intersection of the line segment with the plane.
+		FVector LineDir = LineEnd - LineStart;
+		float Denom = FVector::DotProduct(PlaneNormal, LineDir);
+
+
+		// < ------------------------------------- SUPER IMPORTANT FOR WHEN I AM CLEANING AND MOVING INTO AUTOMATING STUFF ----------------------------------------------
+		// < ---------------- we need to come up with a calculation depending on the size of the tubes being dealt with and pass in these tolerances, so they accurately 
+		// < ------------------ Represent the size of the geometry it is dealing with.
+		// Tolerance for nearly parallel lines.
+		const float ToleranceParallel = /*1e-4f*/5.0f;
+		// If the line is nearly parallel to the plane...
+		if (FMath::Abs(Denom) < ToleranceParallel)
+		{
+			// Check if either endpoint is on (or nearly on) the plane.
+			const float TolerancePlane = /*1e-3f*/5.0f;
+			float DistStart = FMath::Abs(FVector::DotProduct(PlaneNormal, LineStart) + PlaneD);
+			float DistEnd = FMath::Abs(FVector::DotProduct(PlaneNormal, LineEnd) + PlaneD);
+
+			if (DistStart < TolerancePlane)
+			{
+				OutIntersectionPoint = LineStart;
+			}
+			else if (DistEnd < TolerancePlane)
+			{
+				OutIntersectionPoint = LineEnd;
+			}
+			else
+			{
+				return false; // Line is nearly parallel and not on the plane.
+			}
+		}
+		else
+		{
+			float T = -(FVector::DotProduct(PlaneNormal, LineStart) + PlaneD) / Denom;
+
+			// Tolerance for endpoints.
+			const float ToleranceT = /*1e-3f*/1e-1f;
+			if (T < -ToleranceT || T > 1.0f + ToleranceT)
+			{
+				return false; // Intersection lies outside the segment.
+			}
+			// Clamp T if it's very near 0 or 1.
+			T = FMath::Clamp(T, 0.0f, 1.0f);
+			OutIntersectionPoint = LineStart + T * LineDir;
 		}
 
-		OutIntersectionPoint = LineStart + T * LineDir;
+		// -----------------------------------------------------------
+		// 3. Project the quadrilateral and the intersection point into 2D.
+		// We'll build a local orthonormal basis for the plane.
+		// Use Edge1 to define the U axis (if it's valid).
+		FVector U = Edge1.GetSafeNormal();
+		// Define V as the cross product of the plane normal and U.
+		FVector V = FVector::CrossProduct(PlaneNormal, U).GetSafeNormal();
 
-		//// check if the intersection point is inside the quadrilateral
-		//FVector QuadEdges[4] = { V1 - V0, V2 - V1, V3 - V2, V0 - V3 };
-		//FVector ToPoint[4] = { 
-		//	OutIntersectionPoint - V0, 
-		//	OutIntersectionPoint - V1, 
-		//	OutIntersectionPoint - V2, 
-		//	OutIntersectionPoint - V3 
-		//};
+		// Lambda to project a 3D point into 2D (using V0 as the origin).
+		auto ProjectTo2D = [&](const FVector& P) -> FVector2D
+			{
+				FVector Offset = P - V0;
+				return FVector2D(FVector::DotProduct(Offset, U), FVector::DotProduct(Offset, V));
+			};
 
-		//for (int32 i = 0; i < 4; i++) {
-		//	FVector Cross = FVector::CrossProduct(QuadEdges[i], ToPoint[i]);
-		//	if (FVector::DotProduct(Cross, PlaneNormal) < 0) {
-		//		UE_LOG(LogTemp, Log, TEXT("Point is outside the quadrilateral V0: %s, V1: %s, V2: %s, V3: %s, LineStart: %s, LineEnd: %s"), *V0.ToString(), *V1.ToString(), *V2.ToString(), *V3.ToString(), *LineStart.ToString(), *LineEnd.ToString());
-		//		return false; // point is outside the quadrilateral
+		// Project all four vertices.
+		FVector2D P0 = ProjectTo2D(V0);
+		FVector2D P1 = ProjectTo2D(V1);
+		FVector2D P2 = ProjectTo2D(V2);
+		FVector2D P3 = ProjectTo2D(V3);
+		FVector2D PIntersection = ProjectTo2D(OutIntersectionPoint);
+
+		// -----------------------------------------------------------
+		// 4. Use a 2D ray-casting algorithm to test if the intersection lies inside the quadrilateral.
+		TArray<FVector2D> Poly2D;
+		Poly2D.Add(P0);
+		Poly2D.Add(P1);
+		Poly2D.Add(P2);
+		Poly2D.Add(P3);
+
+		bool bInside = false;
+		int32 NumVerts = Poly2D.Num();
+		for (int32 i = 0, j = NumVerts - 1; i < NumVerts; j = i++)
+		{
+			// Check if the horizontal ray to the right from PIntersection crosses the edge (Poly2D[j] to Poly2D[i]).
+			if (((Poly2D[i].Y > PIntersection.Y) != (Poly2D[j].Y > PIntersection.Y)) &&
+				(PIntersection.X < (Poly2D[j].X - Poly2D[i].X) * (PIntersection.Y - Poly2D[i].Y) / (Poly2D[j].Y - Poly2D[i].Y) + Poly2D[i].X))
+			{
+				bInside = !bInside;
+			}
+		}
+
+		return bInside;
+
+		// ---------------------------------------------------------
+		// 1. Compute the plane of the quadrilateral.
+		// Use two edges (V1-V0 and V3-V0) to compute the normal.
+		//FVector Edge1 = V1 - V0;
+		//FVector Edge2 = V3 - V0;
+		//FVector PlaneNormal = FVector::CrossProduct(Edge1, Edge2).GetSafeNormal();
+		//if (PlaneNormal.IsNearlyZero())
+		//{
+		//	UE_LOG(LogTemp, Warning, TEXT("Degenerate quadrilateral: plane normal is zero."));
+		//	return false;
+		//}
+
+		//// Compute plane equation: N . (P - V0) = 0, so D = -N dot V0.
+		//float PlaneD = -FVector::DotProduct(PlaneNormal, V0);
+
+		//// ---------------------------------------------------------
+		//// 2. Compute the intersection of the line segment with the plane.
+		//FVector LineDir = LineEnd - LineStart;
+		//float Denom = FVector::DotProduct(PlaneNormal, LineDir);
+		//if (FMath::Abs(Denom) < KINDA_SMALL_NUMBER)
+		//{
+		//	// The line is nearly parallel to the plane.
+		//	return false;
+		//}
+
+		//float T = -(FVector::DotProduct(PlaneNormal, LineStart) + PlaneD) / Denom;
+		//if (T < 0.0f || T > 1.0f)
+		//{
+		//	// Intersection is outside the line segment.
+		//	return false;
+		//}
+
+		//OutIntersectionPoint = LineStart + T * LineDir;
+
+		//// ---------------------------------------------------------
+		//// 3. Project the quadrilateral and the intersection point onto 2D.
+		//// We create a local coordinate system for the plane.
+		//// Choose U as a normalized version of Edge1, and V as the cross product of PlaneNormal and U.
+		//FVector U = Edge1.GetSafeNormal();
+		//FVector V = FVector::CrossProduct(PlaneNormal, U).GetSafeNormal();
+
+		//// Lambda function to project a 3D point onto the 2D plane.
+		//auto ProjectTo2D = [&](const FVector& Point3D) -> FVector2D
+		//	{
+		//		// Use V0 as the origin for the 2D coordinate system.
+		//		FVector Offset = Point3D - V0;
+		//		return FVector2D(FVector::DotProduct(Offset, U), FVector::DotProduct(Offset, V));
+		//	};
+
+		//FVector2D P0 = ProjectTo2D(V0);
+		//FVector2D P1 = ProjectTo2D(V1);
+		//FVector2D P2 = ProjectTo2D(V2);
+		//FVector2D P3 = ProjectTo2D(V3);
+		//FVector2D PIntersection = ProjectTo2D(OutIntersectionPoint);
+
+		//// ---------------------------------------------------------
+		//// 4. Use a standard 2D ray-casting algorithm to test if the intersection is inside the quadrilateral.
+		//TArray<FVector2D> Poly;
+		//Poly.Add(P0);
+		//Poly.Add(P1);
+		//Poly.Add(P2);
+		//Poly.Add(P3);
+
+		//bool bInside = false;
+		//int32 NumVerts = Poly.Num();
+		//for (int32 i = 0, j = NumVerts - 1; i < NumVerts; j = i++)
+		//{
+		//	// Check if the ray from the intersection point horizontally crosses the edge between Poly[j] and Poly[i].
+		//	if (((Poly[i].Y > PIntersection.Y) != (Poly[j].Y > PIntersection.Y)) &&
+		//		(PIntersection.X < (Poly[j].X - Poly[i].X) * (PIntersection.Y - Poly[i].Y) / (Poly[j].Y - Poly[i].Y) + Poly[i].X))
+		//	{
+		//		bInside = !bInside;
 		//	}
 		//}
 
-		//UE_LOG(LogTemp, Log, TEXT("Intersection is inside the quadrilateral V0: %s, V1: %s, V2: %s, V3: %s, LineStart: %s, LineEnd: %s"), *V0.ToString(), *V1.ToString(), *V2.ToString(), *V3.ToString(), *LineStart.ToString(), *LineEnd.ToString());
+		//return bInside;
 
-		//return true; // intersection confirmed inside the quadrilateral
+		// old if does not work -----------------------------------------------------------------------------------------------------------------------------------------
 
-		// Check if the intersection point is inside the quadrilateral using the winding number method
-		FVector QuadVertices[4] = { V0, V1, V2, V3 };
-		float TotalAngle = 0.0f;
+		// compute plane normal using cross product of two edges
+		//FVector Edge1 = V1 - V0;
+		//FVector Edge2 = V3 - V0;
+		//FVector PlaneNormal = FVector::CrossProduct(Edge1, Edge2).GetSafeNormal();
 
-		for (int i = 0; i < 4; i++) {
-			FVector A = (QuadVertices[i] - OutIntersectionPoint).GetSafeNormal();
-			FVector B = (QuadVertices[(i + 1) % 4] - OutIntersectionPoint).GetSafeNormal();
-			float Angle = FMath::Acos(FVector::DotProduct(A, B));
-			TotalAngle += Angle;
-		}
+		//// compute plane equation: N . (P - V0) = 0
+		//float PlaneD = -FVector::DotProduct(PlaneNormal, V0);
 
-		// If the total angle is close to 2pi (360 degrees), the point is inside
-		if (FMath::Abs(TotalAngle - 2.0f * PI) < 0.01f) {
-			//UE_LOG(LogTemp, Warning, TEXT("Intersection is inside the quadrilateral V0: %s, V1: %s, V2: %s, V3: %s, LineStart: %s, LineEnd: %s"), *V0.ToString(), *V1.ToString(), *V2.ToString(), *V3.ToString(), *LineStart.ToString(), *LineEnd.ToString());
-			return true;
-		}
+		//// compute line direction
+		//FVector LineDir = LineEnd - LineStart;
+		//float Denom = FVector::DotProduct(PlaneNormal, LineDir);
 
-		//UE_LOG(LogTemp, Log, TEXT("Point is outside the quadrilateral V0: %s, V1: %s, V2: %s, V3: %s, LineStart: %s, LineEnd: %s"), *V0.ToString(), *V1.ToString(), *V2.ToString(), *V3.ToString(), *LineStart.ToString(), *LineEnd.ToString());
+		//// check if the line is parallel to the plane
+		//if (FMath::Abs(Denom) < KINDA_SMALL_NUMBER) {
+		//	//UE_LOG(LogTemp, Log, TEXT("Line is parallel to the plane V0: %s, V1: %s, V2: %s, V3: %s, LineStart: %s, LineEnd: %s"), *V0.ToString(), *V1.ToString(), *V2.ToString(), *V3.ToString(), *LineStart.ToString(), *LineEnd.ToString());
+		//	return false;
+		//}
 
-		return false;
+		//// compute the intersection point with the plane
+		//float T = -(FVector::DotProduct(PlaneNormal, LineStart) + PlaneD) / Denom;
+		//if (T < 0.0f || T > 1.0f) {
+		//	//UE_LOG(LogTemp, Log, TEXT("Intersection is outside the line segment V0: %s, V1: %s, V2: %s, V3: %s, LineStart: %s, LineEnd: %s"), *V0.ToString(), *V1.ToString(), *V2.ToString(), *V3.ToString(), *LineStart.ToString(), *LineEnd.ToString());
+		//	return false; // intersection outside the line segment
+		//}
+
+		//OutIntersectionPoint = LineStart + T * LineDir;
+
+		////// check if the intersection point is inside the quadrilateral
+		////FVector QuadEdges[4] = { V1 - V0, V2 - V1, V3 - V2, V0 - V3 };
+		////FVector ToPoint[4] = { 
+		////	OutIntersectionPoint - V0, 
+		////	OutIntersectionPoint - V1, 
+		////	OutIntersectionPoint - V2, 
+		////	OutIntersectionPoint - V3 
+		////};
+
+		////for (int32 i = 0; i < 4; i++) {
+		////	FVector Cross = FVector::CrossProduct(QuadEdges[i], ToPoint[i]);
+		////	if (FVector::DotProduct(Cross, PlaneNormal) < 0) {
+		////		UE_LOG(LogTemp, Log, TEXT("Point is outside the quadrilateral V0: %s, V1: %s, V2: %s, V3: %s, LineStart: %s, LineEnd: %s"), *V0.ToString(), *V1.ToString(), *V2.ToString(), *V3.ToString(), *LineStart.ToString(), *LineEnd.ToString());
+		////		return false; // point is outside the quadrilateral
+		////	}
+		////}
+
+		////UE_LOG(LogTemp, Log, TEXT("Intersection is inside the quadrilateral V0: %s, V1: %s, V2: %s, V3: %s, LineStart: %s, LineEnd: %s"), *V0.ToString(), *V1.ToString(), *V2.ToString(), *V3.ToString(), *LineStart.ToString(), *LineEnd.ToString());
+
+		////return true; // intersection confirmed inside the quadrilateral
+
+		//// Check if the intersection point is inside the quadrilateral using the winding number method
+		//FVector QuadVertices[4] = { V0, V1, V2, V3 };
+		//float TotalAngle = 0.0f;
+
+		//for (int i = 0; i < 4; i++) {
+		//	FVector A = (QuadVertices[i] - OutIntersectionPoint).GetSafeNormal();
+		//	FVector B = (QuadVertices[(i + 1) % 4] - OutIntersectionPoint).GetSafeNormal();
+		//	float Angle = FMath::Acos(FVector::DotProduct(A, B));
+		//	TotalAngle += Angle;
+		//}
+
+		//// If the total angle is close to 2pi (360 degrees), the point is inside
+		//if (FMath::Abs(TotalAngle - 2.0f * PI) < 0.01f) {
+		//	//UE_LOG(LogTemp, Warning, TEXT("Intersection is inside the quadrilateral V0: %s, V1: %s, V2: %s, V3: %s, LineStart: %s, LineEnd: %s"), *V0.ToString(), *V1.ToString(), *V2.ToString(), *V3.ToString(), *LineStart.ToString(), *LineEnd.ToString());
+		//	return true;
+		//}
+
+		////UE_LOG(LogTemp, Log, TEXT("Point is outside the quadrilateral V0: %s, V1: %s, V2: %s, V3: %s, LineStart: %s, LineEnd: %s"), *V0.ToString(), *V1.ToString(), *V2.ToString(), *V3.ToString(), *LineStart.ToString(), *LineEnd.ToString());
+
+		//return false;
 	}
 
 	FVector ComputeCentroid(const TArray<FVector>& Vertices) {
@@ -2384,6 +2644,8 @@ namespace DoobGeometryUtils {
 
 		// this including the part in the struct was for testing only, can remove all of this
 		TubeIntersectionData.MainTubePartialRings = BelowIntersectionRings;
+
+		//ConnectRings(TubeIntersectionData.LateralTubeJointRings[0].Vertices, TubeIntersectionData.LateralTubeJointRings[1].Vertices, TubeIntersectionData.AllVertices, TubeIntersectionData.Triangles, BaseIndex);
 
 		ConnectRingArray(FullLateralTubeRings, TubeIntersectionData.AllVertices, TubeIntersectionData.Triangles, BaseIndex);
 	}

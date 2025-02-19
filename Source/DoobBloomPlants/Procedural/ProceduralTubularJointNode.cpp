@@ -65,7 +65,7 @@ void AProceduralTubularJointNode::BuildMainTube() {
 	LateralStartPosition = StartPosition + (MainTubeLength / 2) * MainTubeDirection;
 	// ------------------------------------ either this doesnt work or directions need some work. need to check
 	//LateralTubeDirection = DoobMathUtils::GetRandomDirectionBetween(DoobMathUtils::GenerateRandomPerpendicularVector(MainTubeDirection), MainTubeDirection, 0.2f, 0.9f);
-	LateralTubeDirection = FVector(1, 0, 0);
+	LateralTubeDirection = FVector(-1, 0, 0);
 
 	DoobGeometryUtils::ConstructTubeFromProfile(LateralTubeProfile, LateralStartPosition, LateralTubeDirection, FVector(0, 0, 1), LateralTubeProfile.Points.Num(), LateralTubeNumSides, LateralTubeLength, TubeIntersection.LateralTube, true);
 
